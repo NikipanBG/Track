@@ -11,8 +11,9 @@
             --email: #007bff; 
             --danger: #d73a49; 
             --dark: #1a1d21;
-            --success: #28a745;  /* ЛИПСВАШЕ ТАЗИ ПРОМЕНЛИВА */
+            --success: #28a745;
             --warning: #ffc107;
+            --info: #17a2b8;
         }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; }
         .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
@@ -25,32 +26,65 @@
         .btn-add:hover { background: #000; transform: translateY(-1px); }
         .btn-export { background: #6e7681; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .btn-export:hover { background: #5a6268; }
-        .order-card { background: #fff; border: 1px solid #e1e4e8; padding: 18px; margin-bottom: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; transition: all 0.2s; }
+        .order-card { background: #fff; border: 1px solid #e1e4e8; padding: 18px; margin-bottom: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: flex-start; border-left: 6px solid #ccc; transition: all 0.2s; position: relative; }
         .order-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateX(2px); }
         .status-travel { border-left-color: var(--email); }
         .status-done { border-left-color: var(--success); }
         .status-issue { border-left-color: var(--danger); }
+        .order-info { flex: 1; min-width: 0; }
         .order-info strong { display: block; font-size: 18px; margin-bottom: 4px; }
         .order-info span { display: block; color: #666; font-size: 14px; margin-top: 4px; }
         .copy-badge { cursor: pointer; background: #f0f7ff; color: #0056b3; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 13px; font-weight: 600; border: 1px solid #cce3ff; display: inline-block; margin-top: 6px; transition: all 0.2s; }
         .copy-badge:hover { background: #e1f0ff; }
-        .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
         .btn-action { padding: 10px 14px; font-size: 13px; border-radius: 8px; color: white; border: none; cursor: pointer; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 4px; }
         .btn-action:hover { transform: translateY(-1px); opacity: 0.9; }
+        .btn-check { background: var(--info); }
         .btn-copy-text { background: #6f42c1; }
         .btn-status-travel { background: #f8f9fa; color: #444; border: 1px solid #ddd; }
         .btn-status-done { background: var(--success); color: white; }
         .btn-status-issue { background: var(--danger); color: white; }
         
-        /* Toast известия вместо alert */
         .toast { position: fixed; bottom: 20px; right: 20px; background: var(--dark); color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; opacity: 0; transform: translateY(20px); transition: all 0.3s; font-weight: 500; }
         .toast.show { opacity: 1; transform: translateY(0); }
         .toast.success { background: var(--success); }
         .toast.error { background: var(--danger); }
+        .toast.info { background: var(--info); }
         
         .stats { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
         .stat-box { background: #f8f9fa; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #666; border: 1px solid #eee; }
         .stat-box span { color: var(--dark); font-size: 18px; margin-left: 5px; }
+        
+        /* Статус индикатор от куриера */
+        .courier-status { 
+            margin-top: 8px; 
+            padding: 8px 12px; 
+            background: #f8f9fa; 
+            border-radius: 6px; 
+            font-size: 13px; 
+            border-left: 3px solid var(--info);
+            display: none;
+        }
+        .courier-status.show { display: block; }
+        .courier-status.loading { 
+            background: #fff3cd; 
+            border-left-color: var(--warning);
+            color: #856404;
+        }
+        .courier-status.success { 
+            background: #d4edda; 
+            border-left-color: var(--success);
+            color: #155724;
+        }
+        .courier-status.error { 
+            background: #f8d7da; 
+            border-left-color: var(--danger);
+            color: #721c24;
+        }
+        .courier-status .timestamp { font-size: 11px; color: #666; margin-top: 4px; }
+        
+        .check-btn-container { display: flex; align-items: center; gap: 8px; }
+        .last-check { font-size: 11px; color: #999; margin-top: 4px; }
         
         @media (max-width: 900px) { 
             .admin-panel { grid-template-columns: 1fr; } 
@@ -61,6 +95,54 @@
         
         .empty-state { text-align: center; padding: 40px; color: #666; font-size: 16px; }
         .empty-state-icon { font-size: 48px; margin-bottom: 10px; opacity: 0.3; }
+        
+        /* Модал за проверка */
+        .modal-overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; right: 0; bottom: 0; 
+            background: rgba(0,0,0,0.5); 
+            z-index: 2000; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-content { 
+            background: white; 
+            width: 90%; 
+            max-width: 800px; 
+            height: 80vh; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+        }
+        .modal-header { 
+            padding: 15px 20px; 
+            background: var(--dark); 
+            color: white; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        .modal-close { 
+            background: none; 
+            border: none; 
+            color: white; 
+            font-size: 24px; 
+            cursor: pointer; 
+            padding: 0; 
+            width: 30px; 
+            height: 30px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .modal-iframe { 
+            flex: 1; 
+            border: none; 
+            width: 100%; 
+        }
     </style>
 </head>
 <body>
@@ -97,6 +179,17 @@
 
 <div id="toast" class="toast"></div>
 
+<!-- Модал за проверка в сайта на куриера -->
+<div id="checkModal" class="modal-overlay" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span>Проверка на пратка</span>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <iframe id="checkIframe" class="modal-iframe"></iframe>
+    </div>
+</div>
+
 <script>
     let orders = JSON.parse(localStorage.getItem('autozonaOrders') || '[]');
 
@@ -112,22 +205,15 @@
         const sel = document.getElementById('courier');
         const v = val.trim().toLowerCase();
         
-        // Sameday: започва с 1O (буквата O) или 10, дължина 14
         if (v.length === 14 && (v.startsWith('1o') || v.startsWith('10'))) sel.value = 'sameday';
-        // Econt: 13 цифри
         else if (v.length === 13 && /^\d+$/.test(v)) sel.value = 'econt';
-        // Speedy: 11 цифри
         else if (v.length === 11 && /^\d+$/.test(v)) sel.value = 'speedy';
-        // BoxNow: 10 цифри
         else if (v.length === 10 && /^\d+$/.test(v)) sel.value = 'boxnow';
     }
 
     function formatPhone(phone) {
         if (!phone) return '';
-        // Премахва всичко освен цифри и +
         let cleaned = phone.replace(/[^\d+]/g, '');
-        // Ако започва с 0, го запазваме
-        // Ако започва с 359, добавяме +
         if (cleaned.startsWith('359') && !cleaned.startsWith('+')) {
             cleaned = '+' + cleaned;
         }
@@ -145,6 +231,13 @@
             return;
         }
         
+        // Проверка за дубликат
+        const existing = orders.find(o => o.num === num && o.courier === courier);
+        if (existing) {
+            showToast('Тази товарителница вече съществува!', 'error');
+            return;
+        }
+        
         orders.unshift({ 
             id: Date.now(), 
             name, 
@@ -153,14 +246,15 @@
             courier, 
             status: 'travel', 
             date: new Date().toLocaleString('bg-BG'),
-            createdAt: Date.now()
+            createdAt: Date.now(),
+            lastCheck: null,
+            courierStatus: null
         });
         
         save(); 
         render();
         showToast('Пратката е добавена успешно!', 'success');
         
-        // Изчистване на полетата
         ['custName', 'custPhone', 'trackNo'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('custName').focus();
     }
@@ -168,9 +262,116 @@
     function getTrackUrl(o) {
         if (o.courier === 'econt') return `https://www.econt.com/services/track-shipment/${o.num}`;
         if (o.courier === 'speedy') return `https://www.speedy.bg/bg/track-shipment/?shipmentNumber=${o.num}`;
-        if (o.courier === 'boxnow') return `https://boxnow.bg/track/${o.num}`;  // ПОПРАВЕНО: .bg вместо .com
+        if (o.courier === 'boxnow') return `https://boxnow.bg/track/${o.num}`;
         if (o.courier === 'sameday') return `https://sameday.bg/#awb=${o.num}`;
         return "";
+    }
+
+    // Проверка на статуса чрез API (където е възможно) или iframe
+    async function checkCourierStatus(id) {
+        const o = orders.find(x => x.id === id);
+        const statusDiv = document.getElementById(`courier-status-${id}`);
+        const btn = document.getElementById(`check-btn-${id}`);
+        
+        // Показваме loading състояние
+        statusDiv.className = 'courier-status loading show';
+        statusDiv.innerHTML = '⏳ Проверка на статуса...';
+        btn.disabled = true;
+        
+        try {
+            // За Econt има публично API
+            if (o.courier === 'econt') {
+                await checkEcontStatus(o, statusDiv);
+            } else {
+                // За останалите отваряме в модал/iframe
+                openCheckModal(o);
+                statusDiv.className = 'courier-status show';
+                statusDiv.innerHTML = `📋 <a href="${getTrackUrl(o)}" target="_blank" style="color: var(--info); text-decoration: underline;">Отвори в нов прозорец</a>`;
+            }
+        } catch (error) {
+            statusDiv.className = 'courier-status error show';
+            statusDiv.innerHTML = `❌ Грешка при проверката: ${error.message}`;
+        } finally {
+            btn.disabled = false;
+            o.lastCheck = new Date().toLocaleString('bg-BG');
+            save();
+            render();
+        }
+    }
+
+    // Econt API проверка
+    async function checkEcontStatus(order, statusDiv) {
+        try {
+            // Econt API endpoint (публичен)
+            const response = await fetch(`https://www.econt.com/services/Nomenclatures/NomenclaturesService.getShipmentStatuses.json`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    shipmentNumbers: [order.num]
+                })
+            });
+            
+            if (!response.ok) throw new Error('API грешка');
+            
+            const data = await response.json();
+            
+            if (data && data.statuses && data.statuses[0]) {
+                const status = data.statuses[0];
+                order.courierStatus = {
+                    status: status.status,
+                    description: status.description || status.status,
+                    timestamp: status.timestamp || new Date().toISOString()
+                };
+                
+                statusDiv.className = 'courier-status success show';
+                statusDiv.innerHTML = `
+                    <strong>📦 Статус от Еконт:</strong><br>
+                    ${status.description || status.status}<br>
+                    <div class="timestamp">🕐 ${new Date(status.timestamp).toLocaleString('bg-BG')}</div>
+                `;
+                
+                // Автоматично обновяваме статуса ако е доставена
+                if (status.status === 'Delivered' || status.status === ' delivered') {
+                    if (order.status !== 'done') {
+                        order.status = 'done';
+                        showToast('Статусът е обновен на "Доставена" според данни от куриера!', 'success');
+                    }
+                }
+            } else {
+                throw new Error('Няма данни за тази товарителница');
+            }
+        } catch (error) {
+            // Ако API-то не работи, пробваме алтернативен метод
+            console.log('Econt API error:', error);
+            openCheckModal(order);
+            statusDiv.className = 'courier-status show';
+            statusDiv.innerHTML = `📋 Проверка през сайта на Еконт...`;
+        }
+    }
+
+    // Проверка за Speedy ( scrape-ване не е възможно от клиента, затова отваряме iframe)
+    function openCheckModal(order) {
+        const modal = document.getElementById('checkModal');
+        const iframe = document.getElementById('checkIframe');
+        const url = getTrackUrl(order);
+        
+        iframe.src = url;
+        modal.classList.add('show');
+        
+        // Запазваме че сме проверили
+        order.lastCheck = new Date().toLocaleString('bg-BG');
+        save();
+    }
+
+    function closeModal(event) {
+        if (!event || event.target.id === 'checkModal' || event.target.classList.contains('modal-close')) {
+            const modal = document.getElementById('checkModal');
+            const iframe = document.getElementById('checkIframe');
+            modal.classList.remove('show');
+            iframe.src = '';
+        }
     }
 
     function getViberText(o) {
@@ -184,20 +385,14 @@
     function sendViber(id) {
         const o = orders.find(x => x.id === id);
         const text = getViberText(o);
-        
-        // Опитваме Viber deep link
         const viberUrl = `viber://forward?text=${encodeURIComponent(text)}`;
-        
-        // Проверка дали е мобилно устройство
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
         if (isMobile) {
             window.location.href = viberUrl;
-            // Копираме текста като backup
             copyToClipboard(text, false);
-            showToast('Отваряне на Viber... Текстът е копиран в клипборда', 'success');
+            showToast('Отваряне на Viber... Текстът е копиран', 'success');
         } else {
-            // На десктоп - само копираме текста
             copyToClipboard(text, true);
             showToast('Viber работи само на мобилни устройства. Текстът е копиран!', 'success');
         }
@@ -215,7 +410,6 @@
                 if (showNotification) showToast('Копирано в клипборда!', 'success');
             });
         } else {
-            // Fallback за стари браузъри
             const textArea = document.createElement("textarea");
             textArea.value = text;
             textArea.style.position = "fixed";
@@ -254,10 +448,10 @@
     }
 
     function exportToCSV() {
-        let csv = "Дата,Клиент,Телефон,Куриер,Номер,Статус\n";
+        let csv = "Дата,Клиент,Телефон,Куриер,Номер,Статус,Последна проверка\n";
         orders.forEach(o => {
             const statusText = { 'travel': 'Пътува', 'done': 'Доставена', 'issue': 'Проблем' }[o.status];
-            csv += `${o.date},${o.name},${o.phone},${o.courier},${o.num},${statusText}\n`;
+            csv += `${o.date},${o.name},${o.phone},${o.courier},${o.num},${statusText},${o.lastCheck || 'Няма'}\n`;
         });
         const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
@@ -317,6 +511,23 @@
             };
             const statusInfo = statusConfig[o.status];
             
+            // Показваме последна проверка ако има такава
+            const lastCheckHtml = o.lastCheck ? `<div class="last-check">🕐 Последна проверка: ${o.lastCheck}</div>` : '';
+            
+            // Показваме статус от куриера ако има такъв
+            let courierStatusHtml = '';
+            if (o.courierStatus) {
+                courierStatusHtml = `
+                    <div class="courier-status success show">
+                        <strong>📦 Последен статус:</strong><br>
+                        ${o.courierStatus.description}<br>
+                        <div class="timestamp">🕐 ${new Date(o.courierStatus.timestamp).toLocaleString('bg-BG')}</div>
+                    </div>
+                `;
+            } else {
+                courierStatusHtml = `<div id="courier-status-${o.id}" class="courier-status"></div>`;
+            }
+            
             const card = document.createElement('div');
             card.className = `order-card status-${o.status}`;
             card.innerHTML = `
@@ -324,9 +535,12 @@
                     <strong>${escapeHtml(o.name)}</strong>
                     <span>📞 ${o.phone || '---'} | 📅 ${o.date}</span>
                     <span class="copy-badge" onclick="copyTrackingNumber('${o.num}')">${o.courier.toUpperCase()}: ${o.num} 📋</span>
+                    ${lastCheckHtml}
+                    ${courierStatusHtml}
                 </div>
                 <div class="actions">
                     <button class="btn-action ${statusInfo.class}" onclick="changeStatus(${o.id})">${statusInfo.label}</button>
+                    <button id="check-btn-${o.id}" class="btn-action btn-check" onclick="checkCourierStatus(${o.id})" title="Провери в сайта на куриера">🔍 Провери</button>
                     <button class="btn-action" style="background:var(--viber)" onclick="sendViber(${o.id})">💜 Viber</button>
                     <button class="btn-action btn-copy-text" onclick="copyViberText(${o.id})" title="Копирай Viber текст">📋 Текст</button>
                     <button class="btn-action" style="background:var(--email)" onclick="sendEmail(${o.id})">✉️ Email</button>
@@ -350,6 +564,11 @@
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') addOrder();
         });
+    });
+    
+    // Escape key за затваряне на модала
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
     });
 </script>
 </body>
