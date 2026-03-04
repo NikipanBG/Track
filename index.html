@@ -55,7 +55,6 @@
         .stat-box { background: #f8f9fa; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #666; border: 1px solid #eee; }
         .stat-box span { color: var(--dark); font-size: 18px; margin-left: 5px; }
         
-        /* Статус индикатор от куриера */
         .courier-status { 
             margin-top: 8px; 
             padding: 8px 12px; 
@@ -83,7 +82,6 @@
         }
         .courier-status .timestamp { font-size: 11px; color: #666; margin-top: 4px; }
         
-        .check-btn-container { display: flex; align-items: center; gap: 8px; }
         .last-check { font-size: 11px; color: #999; margin-top: 4px; }
         
         @media (max-width: 900px) { 
@@ -96,7 +94,6 @@
         .empty-state { text-align: center; padding: 40px; color: #666; font-size: 16px; }
         .empty-state-icon { font-size: 48px; margin-bottom: 10px; opacity: 0.3; }
         
-        /* Модал за проверка */
         .modal-overlay { 
             display: none; 
             position: fixed; 
@@ -179,7 +176,6 @@
 
 <div id="toast" class="toast"></div>
 
-<!-- Модал за проверка в сайта на куриера -->
 <div id="checkModal" class="modal-overlay" onclick="closeModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -231,7 +227,6 @@
             return;
         }
         
-        // Проверка за дубликат
         const existing = orders.find(o => o.num === num && o.courier === courier);
         if (existing) {
             showToast('Тази товарителница вече съществува!', 'error');
@@ -262,32 +257,26 @@
     function getTrackUrl(o) {
         if (o.courier === 'econt') return `https://www.econt.com/services/track-shipment/${o.num}`;
         if (o.courier === 'speedy') return `https://www.speedy.bg/bg/track-shipment/?shipmentNumber=${o.num}`;
-        if (o.courier === 'boxnow') return `https://boxnow.bg/track/${o.num}`;
+        // ПОПРАВЕНО: BoxNow използва ?track= параметър
+        if (o.courier === 'boxnow') return `https://www.boxnow.bg/?track=${o.num}`;
         if (o.courier === 'sameday') return `https://sameday.bg/#awb=${o.num}`;
         return "";
     }
 
-    // Проверка на статуса чрез API (където е възможно) или iframe
     async function checkCourierStatus(id) {
         const o = orders.find(x => x.id === id);
         const statusDiv = document.getElementById(`courier-status-${id}`);
         const btn = document.getElementById(`check-btn-${id}`);
         
-        // Показваме loading състояние
         statusDiv.className = 'courier-status loading show';
         statusDiv.innerHTML = '⏳ Проверка на статуса...';
         btn.disabled = true;
         
         try {
-            // За Econt има публично API
-            if (o.courier === 'econt') {
-                await checkEcontStatus(o, statusDiv);
-            } else {
-                // За останалите отваряме в модал/iframe
-                openCheckModal(o);
-                statusDiv.className = 'courier-status show';
-                statusDiv.innerHTML = `📋 <a href="${getTrackUrl(o)}" target="_blank" style="color: var(--info); text-decoration: underline;">Отвори в нов прозорец</a>`;
-            }
+            // Засега всички куриери се отварят в модал/iframe защото повечето API-та имат CORS ограничения
+            openCheckModal(o);
+            statusDiv.className = 'courier-status show';
+            statusDiv.innerHTML = `📋 <a href="${getTrackUrl(o)}" target="_blank" style="color: var(--info); text-decoration: underline;">Отвори в нов прозорец</a>`;
         } catch (error) {
             statusDiv.className = 'courier-status error show';
             statusDiv.innerHTML = `❌ Грешка при проверката: ${error.message}`;
@@ -299,59 +288,6 @@
         }
     }
 
-    // Econt API проверка
-    async function checkEcontStatus(order, statusDiv) {
-        try {
-            // Econt API endpoint (публичен)
-            const response = await fetch(`https://www.econt.com/services/Nomenclatures/NomenclaturesService.getShipmentStatuses.json`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    shipmentNumbers: [order.num]
-                })
-            });
-            
-            if (!response.ok) throw new Error('API грешка');
-            
-            const data = await response.json();
-            
-            if (data && data.statuses && data.statuses[0]) {
-                const status = data.statuses[0];
-                order.courierStatus = {
-                    status: status.status,
-                    description: status.description || status.status,
-                    timestamp: status.timestamp || new Date().toISOString()
-                };
-                
-                statusDiv.className = 'courier-status success show';
-                statusDiv.innerHTML = `
-                    <strong>📦 Статус от Еконт:</strong><br>
-                    ${status.description || status.status}<br>
-                    <div class="timestamp">🕐 ${new Date(status.timestamp).toLocaleString('bg-BG')}</div>
-                `;
-                
-                // Автоматично обновяваме статуса ако е доставена
-                if (status.status === 'Delivered' || status.status === ' delivered') {
-                    if (order.status !== 'done') {
-                        order.status = 'done';
-                        showToast('Статусът е обновен на "Доставена" според данни от куриера!', 'success');
-                    }
-                }
-            } else {
-                throw new Error('Няма данни за тази товарителница');
-            }
-        } catch (error) {
-            // Ако API-то не работи, пробваме алтернативен метод
-            console.log('Econt API error:', error);
-            openCheckModal(order);
-            statusDiv.className = 'courier-status show';
-            statusDiv.innerHTML = `📋 Проверка през сайта на Еконт...`;
-        }
-    }
-
-    // Проверка за Speedy ( scrape-ване не е възможно от клиента, затова отваряме iframe)
     function openCheckModal(order) {
         const modal = document.getElementById('checkModal');
         const iframe = document.getElementById('checkIframe');
@@ -360,7 +296,6 @@
         iframe.src = url;
         modal.classList.add('show');
         
-        // Запазваме че сме проверили
         order.lastCheck = new Date().toLocaleString('bg-BG');
         save();
     }
@@ -511,10 +446,8 @@
             };
             const statusInfo = statusConfig[o.status];
             
-            // Показваме последна проверка ако има такава
             const lastCheckHtml = o.lastCheck ? `<div class="last-check">🕐 Последна проверка: ${o.lastCheck}</div>` : '';
             
-            // Показваме статус от куриера ако има такъв
             let courierStatusHtml = '';
             if (o.courierStatus) {
                 courierStatusHtml = `
@@ -556,17 +489,14 @@
         return div.innerHTML;
     }
 
-    // Инициализация
     render();
     
-    // Enter key за добавяне
     document.querySelectorAll('.admin-panel input').forEach(input => {
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') addOrder();
         });
     });
     
-    // Escape key за затваряне на модала
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closeModal();
     });
