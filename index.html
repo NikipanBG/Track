@@ -255,38 +255,47 @@
     }
 
     function getTrackUrl(o) {
-        if (o.courier === 'econt') return `https://www.econt.com/services/track-shipment/${o.num}`;
-        if (o.courier === 'speedy') return `https://www.speedy.bg/bg/track-shipment/?shipmentNumber=${o.num}`;
-        // ПОПРАВЕНО: BoxNow използва ?track= параметър
-        if (o.courier === 'boxnow') return `https://www.boxnow.bg/?track=${o.num}`;
-        if (o.courier === 'sameday') return `https://sameday.bg/#awb=${o.num}`;
-        return "";
-    }
+    if (o.courier === 'econt') return `https://www.econt.com/services/track-shipment/${o.num}`;
+    if (o.courier === 'speedy') return `https://www.speedy.bg/public/index.php/bg/track-shipment`;
+    if (o.courier === 'boxnow') return `https://www.boxnow.bg/?track=${o.num}`;
+    if (o.courier === 'sameday') return `https://sameday.bg/#awb=${o.num}`;
+    return "";
+}
 
-    async function checkCourierStatus(id) {
-        const o = orders.find(x => x.id === id);
-        const statusDiv = document.getElementById(`courier-status-${id}`);
-        const btn = document.getElementById(`check-btn-${id}`);
-        
-        statusDiv.className = 'courier-status loading show';
-        statusDiv.innerHTML = '⏳ Проверка на статуса...';
-        btn.disabled = true;
-        
-        try {
-            // Засега всички куриери се отварят в модал/iframe защото повечето API-та имат CORS ограничения
-            openCheckModal(o);
-            statusDiv.className = 'courier-status show';
-            statusDiv.innerHTML = `📋 <a href="${getTrackUrl(o)}" target="_blank" style="color: var(--info); text-decoration: underline;">Отвори в нов прозорец</a>`;
-        } catch (error) {
-            statusDiv.className = 'courier-status error show';
-            statusDiv.innerHTML = `❌ Грешка при проверката: ${error.message}`;
-        } finally {
-            btn.disabled = false;
-            o.lastCheck = new Date().toLocaleString('bg-BG');
-            save();
-            render();
-        }
+async function checkCourierStatus(id) {
+    const o = orders.find(x => x.id === id);
+    const statusDiv = document.getElementById(`courier-status-${id}`);
+    const btn = document.getElementById(`check-btn-${id}`);
+    
+    // Специално третиране за Спиди - копиране на номера и отваряне в нов таб
+    if (o.courier === 'speedy') {
+        copyToClipboard(o.num, false);
+        window.open(getTrackUrl(o), '_blank');
+        showToast('📋 Номерът е копиран! Пейстнете го в сайта на Спиди', 'success');
+        o.lastCheck = new Date().toLocaleString('bg-BG');
+        save();
+        render();
+        return;
     }
+    
+    statusDiv.className = 'courier-status loading show';
+    statusDiv.innerHTML = '⏳ Проверка на статуса...';
+    btn.disabled = true;
+    
+    try {
+        openCheckModal(o);
+        statusDiv.className = 'courier-status show';
+        statusDiv.innerHTML = `📋 <a href="${getTrackUrl(o)}" target="_blank" style="color: var(--info); text-decoration: underline;">Отвори в нов прозорец</a>`;
+    } catch (error) {
+        statusDiv.className = 'courier-status error show';
+        statusDiv.innerHTML = `❌ Грешка при проверката: ${error.message}`;
+    } finally {
+        btn.disabled = false;
+        o.lastCheck = new Date().toLocaleString('bg-BG');
+        save();
+        render();
+    }
+}
 
     function openCheckModal(order) {
         const modal = document.getElementById('checkModal');
@@ -503,3 +512,4 @@
 </script>
 </body>
 </html>
+
