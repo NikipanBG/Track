@@ -140,6 +140,15 @@
             border: none; 
             width: 100%; 
         }
+        
+        .info-note {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            padding: 5px 10px;
+            background: #e7f3ff;
+            border-radius: 6px;
+        }
     </style>
 </head>
 <body>
@@ -153,7 +162,6 @@
             <button class="btn-export" onclick="document.getElementById('importFile').click()" style="background: var(--info);">📂 Зареди</button>
         </div>
     </div>
-    <!-- Скрит input за импорт -->
     <input type="file" id="importFile" style="display: none;" accept=".json" onchange="handleImport(event)">
     
     <div class="stats" id="stats">
@@ -189,6 +197,9 @@
             <button class="modal-close" onclick="closeModal()">&times;</button>
         </div>
         <iframe id="checkIframe" class="modal-iframe"></iframe>
+        <div class="info-note" style="padding: 8px 12px; text-align: center;">
+            💡 Ако страницата не се зарежда, натиснете F5 или използвайте бутона "Отвори в нов прозорец"
+        </div>
     </div>
 </div>
 
@@ -262,10 +273,20 @@
 
     function getTrackUrl(o) {
         if (o.courier === 'econt') return `https://www.econt.com/services/track-shipment/${o.num}`;
-        if (o.courier === 'speedy') return `https://www.speedy.bg/public/index.php/bg/track-shipment`;
+        if (o.courier === 'speedy') return `https://www.speedy.bg/public/index.php/bg/track-shipment?bill_of_lading=${o.num}`;
         if (o.courier === 'boxnow') return `https://www.boxnow.bg/?track=${o.num}`;
-        if (o.courier === 'sameday') return `https://sameday.bg/#awb=${o.num}`;
+        if (o.courier === 'sameday') return `https://sameday.bg/tracking/?awb=${o.num}`;
         return "";
+    }
+
+    // Функция за директно отваряне в нов таб (за Sameday и други)
+    function openInNewTab(o) {
+        const url = getTrackUrl(o);
+        window.open(url, '_blank');
+        o.lastCheck = new Date().toLocaleString('bg-BG');
+        save();
+        render();
+        showToast(`Отворено в нов прозорец за ${o.courier.toUpperCase()}`, 'success');
     }
 
     async function checkCourierStatus(id) {
@@ -273,19 +294,27 @@
         const statusDiv = document.getElementById(`courier-status-${id}`);
         const btn = document.getElementById(`check-btn-${id}`);
         
-        // Специално третиране за Спиди - копиране на номера и отваряне в нов таб
+        // За Speedy - отваряме дирекно в нов таб с номера
         if (o.courier === 'speedy') {
-            copyToClipboard(o.num, false);
-            window.open(getTrackUrl(o), '_blank');
-            showToast('📋 Номерът е копиран! Пейстнете го в сайта на Спиди', 'success');
-            o.lastCheck = new Date().toLocaleString('bg-BG');
-            save();
-            render();
+            openInNewTab(o);
             return;
         }
         
+        // За Sameday - отваряме в нов таб (iframe не работи добре със Sameday)
+        if (o.courier === 'sameday') {
+            openInNewTab(o);
+            return;
+        }
+        
+        // За BoxNow - отваряме в нов таб
+        if (o.courier === 'boxnow') {
+            openInNewTab(o);
+            return;
+        }
+        
+        // За Еконт - използваме модалния прозорец
         statusDiv.className = 'courier-status loading show';
-        statusDiv.innerHTML = '⏳ Проверка на статуса...';
+        statusDiv.innerHTML = '⏳ Отваряне на страницата...';
         btn.disabled = true;
         
         try {
@@ -358,23 +387,29 @@
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(text).then(() => {
                 if (showNotification) showToast('Копирано в клипборда!', 'success');
+            }).catch(() => {
+                fallbackCopy(text, showNotification);
             });
         } else {
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.position = "fixed";
-            textArea.style.left = "-9999px";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                if (showNotification) showToast('Копирано в клипборда!', 'success');
-            } catch (err) {
-                if (showNotification) showToast('Грешка при копиране', 'error');
-            }
-            document.body.removeChild(textArea);
+            fallbackCopy(text, showNotification);
         }
+    }
+    
+    function fallbackCopy(text, showNotification) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            if (showNotification) showToast('Копирано в клипборда!', 'success');
+        } catch (err) {
+            if (showNotification) showToast('Грешка при копиране', 'error');
+        }
+        document.body.removeChild(textArea);
     }
 
     function copyTrackingNumber(num) {
@@ -401,7 +436,7 @@
         let csv = "Дата,Клиент,Телефон,Куриер,Номер,Статус,Последна проверка\n";
         orders.forEach(o => {
             const statusText = { 'travel': 'Пътува', 'done': 'Доставена', 'issue': 'Проблем' }[o.status];
-            csv += `${o.date},${o.name},${o.phone},${o.courier},${o.num},${statusText},${o.lastCheck || 'Няма'}\n`;
+            csv += `"${o.date}","${o.name}","${o.phone}","${o.courier}","${o.num}","${statusText}","${o.lastCheck || 'Няма'}"\n`;
         });
         const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
@@ -411,7 +446,6 @@
         showToast('Файлът е изтеглен!', 'success');
     }
 
-    // 💾 ЕКСПОРТ на всички поръчки като JSON файл
     function exportJSON() {
         if (orders.length === 0) {
             showToast('Няма поръчки за експорт!', 'error');
@@ -436,7 +470,6 @@
         showToast(`✅ Експортирани ${orders.length} поръчки!`, 'success');
     }
 
-    // 📂 ИМПОРТ - обработка на файла
     function handleImport(event) {
         const file = event.target.files[0];
         
@@ -548,18 +581,8 @@
             
             const lastCheckHtml = o.lastCheck ? `<div class="last-check">🕐 Последна проверка: ${o.lastCheck}</div>` : '';
             
-            let courierStatusHtml = '';
-            if (o.courierStatus) {
-                courierStatusHtml = `
-                    <div class="courier-status success show">
-                        <strong>📦 Последен статус:</strong><br>
-                        ${o.courierStatus.description}<br>
-                        <div class="timestamp">🕐 ${new Date(o.courierStatus.timestamp).toLocaleString('bg-BG')}</div>
-                    </div>
-                `;
-            } else {
-                courierStatusHtml = `<div id="courier-status-${o.id}" class="courier-status"></div>`;
-            }
+            // Различен текст на бутона за различните куриери
+            const checkButtonText = (o.courier === 'speedy' || o.courier === 'sameday' || o.courier === 'boxnow') ? '🔗 Отвори' : '🔍 Провери';
             
             const card = document.createElement('div');
             card.className = `order-card status-${o.status}`;
@@ -569,11 +592,11 @@
                     <span>📞 ${o.phone || '---'} | 📅 ${o.date}</span>
                     <span class="copy-badge" onclick="copyTrackingNumber('${o.num}')">${o.courier.toUpperCase()}: ${o.num} 📋</span>
                     ${lastCheckHtml}
-                    ${courierStatusHtml}
+                    <div id="courier-status-${o.id}" class="courier-status"></div>
                 </div>
                 <div class="actions">
                     <button class="btn-action ${statusInfo.class}" onclick="changeStatus(${o.id})">${statusInfo.label}</button>
-                    <button id="check-btn-${o.id}" class="btn-action btn-check" onclick="checkCourierStatus(${o.id})" title="Провери в сайта на куриера">🔍 Провери</button>
+                    <button id="check-btn-${o.id}" class="btn-action btn-check" onclick="checkCourierStatus(${o.id})" title="Провери в сайта на куриера">${checkButtonText}</button>
                     <button class="btn-action" style="background:var(--viber)" onclick="sendViber(${o.id})">💜 Viber</button>
                     <button class="btn-action btn-copy-text" onclick="copyViberText(${o.id})" title="Копирай Viber текст">📋 Текст</button>
                     <button class="btn-action" style="background:var(--email)" onclick="sendEmail(${o.id})">✉️ Email</button>
