@@ -258,16 +258,8 @@
     if (o.courier === 'econt') return `https://www.econt.com/services/track-shipment/${o.num}`;
     if (o.courier === 'speedy') return `https://www.speedy.bg/public/index.php/bg/track-shipment`;
     if (o.courier === 'boxnow') return `https://www.boxnow.bg/?track=${o.num}`;
-    // Кодът за генериране на линка
-if (o.courier === 'sameday') {
-    const trackingUrl = `https://sameday.bg/#awb=${o.num}`;
-    
-    // Вместо да го зареждаш в модален прозорец (iframe), 
-    // кажи на браузъра да го отвори в нов таб:
-    window.open(trackingUrl, '_blank');
-    
-    return; // Спираме изпълнението тук, за да не се отваря празното модално ядро
-}
+    if (o.courier === 'sameday') return `https://sameday.bg/#awb=${o.num}`;
+    return "";
 
 async function checkCourierStatus(id) {
     const o = orders.find(x => x.id === id);
