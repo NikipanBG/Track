@@ -140,15 +140,6 @@
             border: none; 
             width: 100%; 
         }
-        
-        .info-note {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-            padding: 5px 10px;
-            background: #e7f3ff;
-            border-radius: 6px;
-        }
     </style>
 </head>
 <body>
@@ -197,9 +188,6 @@
             <button class="modal-close" onclick="closeModal()">&times;</button>
         </div>
         <iframe id="checkIframe" class="modal-iframe"></iframe>
-        <div class="info-note" style="padding: 8px 12px; text-align: center;">
-            💡 Ако страницата не се зарежда, натиснете F5 или използвайте бутона "Отвори в нов прозорец"
-        </div>
     </div>
 </div>
 
@@ -273,84 +261,25 @@
 
     function getTrackUrl(o) {
         if (o.courier === 'econt') return `https://www.econt.com/services/track-shipment/${o.num}`;
-        if (o.courier === 'speedy') return `https://www.speedy.bg/public/index.php/bg/track-shipment?bill_of_lading=${o.num}`;
-        if (o.courier === 'boxnow') return `https://www.boxnow.bg/?track=${o.num}`;
-        if (o.courier === 'sameday') return `https://sameday.bg/tracking/?awb=${o.num}`;
+        if (o.courier === 'speedy') return `https://www.speedy.bg/bg/tracking/${o.num}`;
+        if (o.courier === 'boxnow') return `https://www.boxnow.bg/tracking/${o.num}`;
+        if (o.courier === 'sameday') return `https://sameday.bg/#awb=${o.num}`;
         return "";
     }
 
-    // Функция за директно отваряне в нов таб (за Sameday и други)
-    function openInNewTab(o) {
-        const url = getTrackUrl(o);
-        window.open(url, '_blank');
+    function checkCourierStatus(id) {
+        const o = orders.find(x => x.id === id);
+        const btn = document.getElementById(`check-btn-${id}`);
+        
+        // Отваряме в нов прозорец за всички куриери
+        window.open(getTrackUrl(o), '_blank');
+        
         o.lastCheck = new Date().toLocaleString('bg-BG');
         save();
         render();
         showToast(`Отворено в нов прозорец за ${o.courier.toUpperCase()}`, 'success');
-    }
-
-    async function checkCourierStatus(id) {
-        const o = orders.find(x => x.id === id);
-        const statusDiv = document.getElementById(`courier-status-${id}`);
-        const btn = document.getElementById(`check-btn-${id}`);
         
-        // За Speedy - отваряме дирекно в нов таб с номера
-        if (o.courier === 'speedy') {
-            openInNewTab(o);
-            return;
-        }
-        
-        // За Sameday - отваряме в нов таб (iframe не работи добре със Sameday)
-        if (o.courier === 'sameday') {
-            openInNewTab(o);
-            return;
-        }
-        
-        // За BoxNow - отваряме в нов таб
-        if (o.courier === 'boxnow') {
-            openInNewTab(o);
-            return;
-        }
-        
-        // За Еконт - използваме модалния прозорец
-        statusDiv.className = 'courier-status loading show';
-        statusDiv.innerHTML = '⏳ Отваряне на страницата...';
-        btn.disabled = true;
-        
-        try {
-            openCheckModal(o);
-            statusDiv.className = 'courier-status show';
-            statusDiv.innerHTML = `📋 <a href="${getTrackUrl(o)}" target="_blank" style="color: var(--info); text-decoration: underline;">Отвори в нов прозорец</a>`;
-        } catch (error) {
-            statusDiv.className = 'courier-status error show';
-            statusDiv.innerHTML = `❌ Грешка при проверката: ${error.message}`;
-        } finally {
-            btn.disabled = false;
-            o.lastCheck = new Date().toLocaleString('bg-BG');
-            save();
-            render();
-        }
-    }
-
-    function openCheckModal(order) {
-        const modal = document.getElementById('checkModal');
-        const iframe = document.getElementById('checkIframe');
-        const url = getTrackUrl(order);
-        
-        iframe.src = url;
-        modal.classList.add('show');
-        
-        order.lastCheck = new Date().toLocaleString('bg-BG');
-        save();
-    }
-
-    function closeModal(event) {
-        if (!event || event.target.id === 'checkModal' || event.target.classList.contains('modal-close')) {
-            const modal = document.getElementById('checkModal');
-            const iframe = document.getElementById('checkIframe');
-            modal.classList.remove('show');
-            iframe.src = '';
-        }
+        btn.disabled = false;
     }
 
     function getViberText(o) {
@@ -387,29 +316,23 @@
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(text).then(() => {
                 if (showNotification) showToast('Копирано в клипборда!', 'success');
-            }).catch(() => {
-                fallbackCopy(text, showNotification);
             });
         } else {
-            fallbackCopy(text, showNotification);
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                if (showNotification) showToast('Копирано в клипборда!', 'success');
+            } catch (err) {
+                if (showNotification) showToast('Грешка при копиране', 'error');
+            }
+            document.body.removeChild(textArea);
         }
-    }
-    
-    function fallbackCopy(text, showNotification) {
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-9999px";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        try {
-            document.execCommand('copy');
-            if (showNotification) showToast('Копирано в клипборда!', 'success');
-        } catch (err) {
-            if (showNotification) showToast('Грешка при копиране', 'error');
-        }
-        document.body.removeChild(textArea);
     }
 
     function copyTrackingNumber(num) {
@@ -581,9 +504,6 @@
             
             const lastCheckHtml = o.lastCheck ? `<div class="last-check">🕐 Последна проверка: ${o.lastCheck}</div>` : '';
             
-            // Различен текст на бутона за различните куриери
-            const checkButtonText = (o.courier === 'speedy' || o.courier === 'sameday' || o.courier === 'boxnow') ? '🔗 Отвори' : '🔍 Провери';
-            
             const card = document.createElement('div');
             card.className = `order-card status-${o.status}`;
             card.innerHTML = `
@@ -596,7 +516,7 @@
                 </div>
                 <div class="actions">
                     <button class="btn-action ${statusInfo.class}" onclick="changeStatus(${o.id})">${statusInfo.label}</button>
-                    <button id="check-btn-${o.id}" class="btn-action btn-check" onclick="checkCourierStatus(${o.id})" title="Провери в сайта на куриера">${checkButtonText}</button>
+                    <button id="check-btn-${o.id}" class="btn-action btn-check" onclick="checkCourierStatus(${o.id})" title="Провери в сайта на куриера">🔍 Провери</button>
                     <button class="btn-action" style="background:var(--viber)" onclick="sendViber(${o.id})">💜 Viber</button>
                     <button class="btn-action btn-copy-text" onclick="copyViberText(${o.id})" title="Копирай Viber текст">📋 Текст</button>
                     <button class="btn-action" style="background:var(--email)" onclick="sendEmail(${o.id})">✉️ Email</button>
