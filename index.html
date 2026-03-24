@@ -57,48 +57,75 @@
         
         .last-check { font-size: 11px; color: #999; margin-top: 4px; }
         
-        /* Панел за проверка */
-        .track-panel {
-            margin-top: 30px;
-            border-top: 2px solid #f0f0f0;
-            padding-top: 20px;
+        /* Модален прозорец */
+        .modal-overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; right: 0; bottom: 0; 
+            background: rgba(0,0,0,0.7); 
+            z-index: 2000; 
+            justify-content: center; 
+            align-items: center; 
         }
-        .track-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
+        .modal-overlay.show { display: flex; }
+        .modal-content { 
+            background: white; 
+            width: 90%; 
+            max-width: 1000px; 
+            height: 85vh; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .modal-header { 
+            padding: 15px 20px; 
+            background: var(--dark); 
+            color: white; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
             flex-wrap: wrap;
             gap: 10px;
         }
-        .track-header h3 {
+        .modal-header h3 {
             margin: 0;
-            color: var(--dark);
+            font-size: 18px;
         }
-        .track-close {
-            background: var(--danger);
-            color: white;
-            border: none;
+        .modal-header .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .modal-close { 
+            background: var(--danger); 
+            border: none; 
+            color: white; 
+            font-size: 14px;
+            cursor: pointer; 
             padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
+            border-radius: 6px;
             font-weight: 600;
         }
-        .track-close:hover {
+        .modal-external {
+            background: var(--info);
+            border: none;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .modal-external:hover, .modal-close:hover {
             opacity: 0.9;
         }
-        .track-frame {
-            width: 100%;
-            height: 600px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background: white;
-        }
-        .track-info {
+        .modal-info {
+            padding: 10px 20px;
             background: #f8f9fa;
-            padding: 10px 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
             font-size: 14px;
             display: flex;
             justify-content: space-between;
@@ -106,12 +133,14 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-        .track-info a {
-            color: var(--info);
-            text-decoration: none;
+        .modal-info strong {
+            color: var(--dark);
         }
-        .track-info a:hover {
-            text-decoration: underline;
+        .modal-iframe { 
+            flex: 1; 
+            border: none; 
+            width: 100%; 
+            background: white;
         }
         
         @media (max-width: 900px) { 
@@ -119,34 +148,17 @@
             .order-card { flex-direction: column; align-items: flex-start; gap: 15px; }
             .actions { width: 100%; }
             .btn-action { flex: 1; justify-content: center; }
-            .track-frame { height: 400px; }
+            .modal-content { width: 95%; height: 90vh; }
+            .modal-header { flex-direction: column; text-align: center; }
         }
         
         .empty-state { text-align: center; padding: 40px; color: #666; font-size: 16px; }
         .empty-state-icon { font-size: 48px; margin-bottom: 10px; opacity: 0.3; }
         
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1500;
-        }
-        .loading-overlay.show {
-            display: flex;
-        }
-        .loading-spinner {
-            background: white;
-            padding: 20px 30px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--dark);
+        .highlight {
+            background: #fff3cd;
+            border-left-color: var(--warning);
+            transition: all 0.3s;
         }
     </style>
 </head>
@@ -185,26 +197,28 @@
 
     <input type="text" id="search" style="width:100%; margin-bottom:20px; padding:12px; border:2px solid #eee; border-radius:10px;" placeholder="🔍 Търси по име или номер..." onkeyup="render()">
     <div id="list"></div>
-    
-    <!-- Панел за проверка на пратка -->
-    <div id="trackPanel" class="track-panel" style="display: none;">
-        <div class="track-header">
-            <h3>📦 Проследяване на пратка</h3>
-            <button class="track-close" onclick="closeTrackPanel()">✖ Затвори</button>
-        </div>
-        <div id="trackInfo" class="track-info"></div>
-        <iframe id="trackFrame" class="track-frame" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"></iframe>
-    </div>
 </div>
 
 <div id="toast" class="toast"></div>
-<div id="loadingOverlay" class="loading-overlay">
-    <div class="loading-spinner">⏳ Зареждане...</div>
+
+<!-- Модален прозорец за проверка -->
+<div id="checkModal" class="modal-overlay" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 id="modalTitle">📦 Проследяване на пратка</h3>
+            <div class="modal-buttons">
+                <a id="modalExternalLink" href="#" target="_blank" class="modal-external">🔗 Отвори в нов прозорец</a>
+                <button class="modal-close" onclick="closeModal()">✖ Затвори</button>
+            </div>
+        </div>
+        <div id="modalInfo" class="modal-info"></div>
+        <iframe id="checkIframe" class="modal-iframe" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-top-navigation"></iframe>
+    </div>
 </div>
 
 <script>
     let orders = JSON.parse(localStorage.getItem('autozonaOrders') || '[]');
-    let currentTrackOrder = null;
+    let currentHighlightId = null;
 
     function showToast(message, type = '') {
         const toast = document.getElementById('toast');
@@ -212,15 +226,6 @@
         toast.className = 'toast ' + type;
         setTimeout(() => toast.classList.add('show'), 10);
         setTimeout(() => toast.classList.remove('show'), 3000);
-    }
-
-    function showLoading(show) {
-        const overlay = document.getElementById('loadingOverlay');
-        if (show) {
-            overlay.classList.add('show');
-        } else {
-            overlay.classList.remove('show');
-        }
     }
 
     function detect(val) {
@@ -297,46 +302,80 @@
         return names[courier] || courier;
     }
 
-    function openTrackPanel(order) {
-        currentTrackOrder = order;
-        const panel = document.getElementById('trackPanel');
-        const frame = document.getElementById('trackFrame');
-        const trackInfo = document.getElementById('trackInfo');
+    function openModal(order) {
+        const modal = document.getElementById('checkModal');
+        const iframe = document.getElementById('checkIframe');
+        const modalInfo = document.getElementById('modalInfo');
+        const modalTitle = document.getElementById('modalTitle');
+        const externalLink = document.getElementById('modalExternalLink');
         const url = getTrackUrl(order);
         
-        // Показваме информация за пратката
-        trackInfo.innerHTML = `
-            <span><strong>${order.name}</strong> | ${getCourierName(order.courier)}: ${order.num}</span>
-            <a href="${url}" target="_blank">🔗 Отвори в нов прозорец →</a>
+        // Информация за пратката
+        modalInfo.innerHTML = `
+            <span><strong>${escapeHtml(order.name)}</strong> | ${getCourierName(order.courier)}: ${order.num}</span>
+            <span style="font-size: 12px; color: #666;">🕐 Последна проверка: ${order.lastCheck || 'няма'}</span>
         `;
         
+        modalTitle.innerHTML = `📦 ${getCourierName(order.courier)} - ${order.num}`;
+        externalLink.href = url;
+        
         // Зареждаме iframe
-        frame.src = url;
-        panel.style.display = 'block';
+        iframe.src = url;
+        modal.classList.add('show');
         
         // Записваме време на проверка
         order.lastCheck = new Date().toLocaleString('bg-BG');
         save();
         
-        // Скролваме до панела
-        setTimeout(() => {
-            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
+        // Маркираме пратката в списъка
+        highlightOrder(order.id);
         
         showToast(`Зареждане на ${getCourierName(order.courier)}...`, 'info');
     }
 
-    function closeTrackPanel() {
-        const panel = document.getElementById('trackPanel');
-        const frame = document.getElementById('trackFrame');
-        frame.src = '';
-        panel.style.display = 'none';
-        currentTrackOrder = null;
+    function highlightOrder(id) {
+        // Премахваме предишния highlight
+        if (currentHighlightId) {
+            const prevCard = document.querySelector(`.order-card[data-id="${currentHighlightId}"]`);
+            if (prevCard) {
+                prevCard.classList.remove('highlight');
+            }
+        }
+        
+        // Маркираме новата пратка
+        const card = document.querySelector(`.order-card[data-id="${id}"]`);
+        if (card) {
+            card.classList.add('highlight');
+            currentHighlightId = id;
+            
+            // Скролваме до нея плавно
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    function closeModal(event) {
+        if (!event || event.target.id === 'checkModal' || event.target.classList.contains('modal-close')) {
+            const modal = document.getElementById('checkModal');
+            const iframe = document.getElementById('checkIframe');
+            modal.classList.remove('show');
+            iframe.src = '';
+            
+            // Премахваме highlight след 2 секунди
+            setTimeout(() => {
+                if (currentHighlightId) {
+                    const card = document.querySelector(`.order-card[data-id="${currentHighlightId}"]`);
+                    if (card) {
+                        card.classList.remove('highlight');
+                    }
+                    currentHighlightId = null;
+                }
+            }, 2000);
+        }
     }
 
     function checkCourierStatus(id) {
         const o = orders.find(x => x.id === id);
-        openTrackPanel(o);
+        openModal(o);
     }
 
     function getViberText(o) {
@@ -563,6 +602,7 @@
             
             const card = document.createElement('div');
             card.className = `order-card status-${o.status}`;
+            card.setAttribute('data-id', o.id);
             card.innerHTML = `
                 <div class="order-info">
                     <strong>${escapeHtml(o.name)}</strong>
@@ -594,6 +634,10 @@
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') addOrder();
         });
+    });
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
     });
 </script>
 </body>
