@@ -261,8 +261,8 @@
 
     function getTrackUrl(o) {
         if (o.courier === 'econt') return `https://www.econt.com/services/track-shipment/${o.num}`;
-        if (o.courier === 'speedy') return `https://www.speedy.bg/bg/tracking/${o.num}`;
-        if (o.courier === 'boxnow') return `https://www.boxnow.bg/tracking/${o.num}`;
+        if (o.courier === 'speedy') return `https://www.speedy.bg/bg/track-shipment?shipmentNumber=${o.num}`;
+        if (o.courier === 'boxnow') return `https://www.boxnow.bg/?track=${o.num}`;
         if (o.courier === 'sameday') return `https://sameday.bg/#awb=${o.num}`;
         return "";
     }
