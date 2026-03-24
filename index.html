@@ -258,8 +258,11 @@
     if (o.courier === 'econt') return `https://www.econt.com/services/track-shipment/${o.num}`;
     if (o.courier === 'speedy') return `https://www.speedy.bg/public/index.php/bg/track-shipment`;
     if (o.courier === 'boxnow') return `https://www.boxnow.bg/?track=${o.num}`;
-    if (o.courier === 'sameday') return `https://sameday.bg/#awb=${o.num}`;
-    return "";
+    if (o.courier === 'sameday') {
+    // .trim() премахва излишни интервали, ако има такива
+    return `https://sameday.bg/#awb=${o.num.toString().trim()}`;
+}
+return "";
 }
 
 async function checkCourierStatus(id) {
