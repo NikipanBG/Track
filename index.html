@@ -16,7 +16,7 @@
             --info: #17a2b8;
         }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; flex-wrap: wrap; gap: 10px; }
         .brand { font-size: 24px; font-weight: 800; color: var(--dark); }
         .admin-panel { display: grid; grid-template-columns: 1.5fr 1.2fr 1.2fr 1fr auto; gap: 12px; margin-bottom: 25px; background: #fafafa; padding: 20px; border-radius: 12px; border: 1px solid #eee; }
@@ -55,90 +55,98 @@
         .stat-box { background: #f8f9fa; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #666; border: 1px solid #eee; }
         .stat-box span { color: var(--dark); font-size: 18px; margin-left: 5px; }
         
-        .courier-status { 
-            margin-top: 8px; 
-            padding: 8px 12px; 
-            background: #f8f9fa; 
-            border-radius: 6px; 
-            font-size: 13px; 
-            border-left: 3px solid var(--info);
-            display: none;
-        }
-        .courier-status.show { display: block; }
-        .courier-status.loading { 
-            background: #fff3cd; 
-            border-left-color: var(--warning);
-            color: #856404;
-        }
-        .courier-status.success { 
-            background: #d4edda; 
-            border-left-color: var(--success);
-            color: #155724;
-        }
-        .courier-status.error { 
-            background: #f8d7da; 
-            border-left-color: var(--danger);
-            color: #721c24;
-        }
-        .courier-status .timestamp { font-size: 11px; color: #666; margin-top: 4px; }
-        
         .last-check { font-size: 11px; color: #999; margin-top: 4px; }
+        
+        /* Панел за проверка */
+        .track-panel {
+            margin-top: 30px;
+            border-top: 2px solid #f0f0f0;
+            padding-top: 20px;
+        }
+        .track-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .track-header h3 {
+            margin: 0;
+            color: var(--dark);
+        }
+        .track-close {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .track-close:hover {
+            opacity: 0.9;
+        }
+        .track-frame {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+        }
+        .track-info {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .track-info a {
+            color: var(--info);
+            text-decoration: none;
+        }
+        .track-info a:hover {
+            text-decoration: underline;
+        }
         
         @media (max-width: 900px) { 
             .admin-panel { grid-template-columns: 1fr; } 
             .order-card { flex-direction: column; align-items: flex-start; gap: 15px; }
             .actions { width: 100%; }
             .btn-action { flex: 1; justify-content: center; }
+            .track-frame { height: 400px; }
         }
         
         .empty-state { text-align: center; padding: 40px; color: #666; font-size: 16px; }
         .empty-state-icon { font-size: 48px; margin-bottom: 10px; opacity: 0.3; }
         
-        .modal-overlay { 
-            display: none; 
-            position: fixed; 
-            top: 0; left: 0; right: 0; bottom: 0; 
-            background: rgba(0,0,0,0.5); 
-            z-index: 2000; 
-            justify-content: center; 
-            align-items: center; 
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1500;
         }
-        .modal-overlay.show { display: flex; }
-        .modal-content { 
-            background: white; 
-            width: 90%; 
-            max-width: 800px; 
-            height: 80vh; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            display: flex; 
-            flex-direction: column; 
+        .loading-overlay.show {
+            display: flex;
         }
-        .modal-header { 
-            padding: 15px 20px; 
-            background: var(--dark); 
-            color: white; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-        }
-        .modal-close { 
-            background: none; 
-            border: none; 
-            color: white; 
-            font-size: 24px; 
-            cursor: pointer; 
-            padding: 0; 
-            width: 30px; 
-            height: 30px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-        }
-        .modal-iframe { 
-            flex: 1; 
-            border: none; 
-            width: 100%; 
+        .loading-spinner {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--dark);
         }
     </style>
 </head>
@@ -177,22 +185,26 @@
 
     <input type="text" id="search" style="width:100%; margin-bottom:20px; padding:12px; border:2px solid #eee; border-radius:10px;" placeholder="🔍 Търси по име или номер..." onkeyup="render()">
     <div id="list"></div>
+    
+    <!-- Панел за проверка на пратка -->
+    <div id="trackPanel" class="track-panel" style="display: none;">
+        <div class="track-header">
+            <h3>📦 Проследяване на пратка</h3>
+            <button class="track-close" onclick="closeTrackPanel()">✖ Затвори</button>
+        </div>
+        <div id="trackInfo" class="track-info"></div>
+        <iframe id="trackFrame" class="track-frame" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"></iframe>
+    </div>
 </div>
 
 <div id="toast" class="toast"></div>
-
-<div id="checkModal" class="modal-overlay" onclick="closeModal(event)">
-    <div class="modal-content" onclick="event.stopPropagation()">
-        <div class="modal-header">
-            <span>Проверка на пратка</span>
-            <button class="modal-close" onclick="closeModal()">&times;</button>
-        </div>
-        <iframe id="checkIframe" class="modal-iframe"></iframe>
-    </div>
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner">⏳ Зареждане...</div>
 </div>
 
 <script>
     let orders = JSON.parse(localStorage.getItem('autozonaOrders') || '[]');
+    let currentTrackOrder = null;
 
     function showToast(message, type = '') {
         const toast = document.getElementById('toast');
@@ -200,6 +212,15 @@
         toast.className = 'toast ' + type;
         setTimeout(() => toast.classList.add('show'), 10);
         setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function showLoading(show) {
+        const overlay = document.getElementById('loadingOverlay');
+        if (show) {
+            overlay.classList.add('show');
+        } else {
+            overlay.classList.remove('show');
+        }
     }
 
     function detect(val) {
@@ -247,8 +268,7 @@
             status: 'travel', 
             date: new Date().toLocaleString('bg-BG'),
             createdAt: Date.now(),
-            lastCheck: null,
-            courierStatus: null
+            lastCheck: null
         });
         
         save(); 
@@ -267,19 +287,56 @@
         return "";
     }
 
+    function getCourierName(courier) {
+        const names = {
+            'econt': 'Еконт',
+            'speedy': 'Спиди',
+            'boxnow': 'BoxNow',
+            'sameday': 'Sameday'
+        };
+        return names[courier] || courier;
+    }
+
+    function openTrackPanel(order) {
+        currentTrackOrder = order;
+        const panel = document.getElementById('trackPanel');
+        const frame = document.getElementById('trackFrame');
+        const trackInfo = document.getElementById('trackInfo');
+        const url = getTrackUrl(order);
+        
+        // Показваме информация за пратката
+        trackInfo.innerHTML = `
+            <span><strong>${order.name}</strong> | ${getCourierName(order.courier)}: ${order.num}</span>
+            <a href="${url}" target="_blank">🔗 Отвори в нов прозорец →</a>
+        `;
+        
+        // Зареждаме iframe
+        frame.src = url;
+        panel.style.display = 'block';
+        
+        // Записваме време на проверка
+        order.lastCheck = new Date().toLocaleString('bg-BG');
+        save();
+        
+        // Скролваме до панела
+        setTimeout(() => {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+        
+        showToast(`Зареждане на ${getCourierName(order.courier)}...`, 'info');
+    }
+
+    function closeTrackPanel() {
+        const panel = document.getElementById('trackPanel');
+        const frame = document.getElementById('trackFrame');
+        frame.src = '';
+        panel.style.display = 'none';
+        currentTrackOrder = null;
+    }
+
     function checkCourierStatus(id) {
         const o = orders.find(x => x.id === id);
-        const btn = document.getElementById(`check-btn-${id}`);
-        
-        // Отваряме в нов прозорец за всички куриери
-        window.open(getTrackUrl(o), '_blank');
-        
-        o.lastCheck = new Date().toLocaleString('bg-BG');
-        save();
-        render();
-        showToast(`Отворено в нов прозорец за ${o.courier.toUpperCase()}`, 'success');
-        
-        btn.disabled = false;
+        openTrackPanel(o);
     }
 
     function getViberText(o) {
@@ -510,13 +567,12 @@
                 <div class="order-info">
                     <strong>${escapeHtml(o.name)}</strong>
                     <span>📞 ${o.phone || '---'} | 📅 ${o.date}</span>
-                    <span class="copy-badge" onclick="copyTrackingNumber('${o.num}')">${o.courier.toUpperCase()}: ${o.num} 📋</span>
+                    <span class="copy-badge" onclick="copyTrackingNumber('${o.num}')">${getCourierName(o.courier)}: ${o.num} 📋</span>
                     ${lastCheckHtml}
-                    <div id="courier-status-${o.id}" class="courier-status"></div>
                 </div>
                 <div class="actions">
                     <button class="btn-action ${statusInfo.class}" onclick="changeStatus(${o.id})">${statusInfo.label}</button>
-                    <button id="check-btn-${o.id}" class="btn-action btn-check" onclick="checkCourierStatus(${o.id})" title="Провери в сайта на куриера">🔍 Провери</button>
+                    <button class="btn-action btn-check" onclick="checkCourierStatus(${o.id})" title="Провери в сайта на куриера">🔍 Провери</button>
                     <button class="btn-action" style="background:var(--viber)" onclick="sendViber(${o.id})">💜 Viber</button>
                     <button class="btn-action btn-copy-text" onclick="copyViberText(${o.id})" title="Копирай Viber текст">📋 Текст</button>
                     <button class="btn-action" style="background:var(--email)" onclick="sendEmail(${o.id})">✉️ Email</button>
@@ -538,10 +594,6 @@
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') addOrder();
         });
-    });
-    
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeModal();
     });
 </script>
 </body>
