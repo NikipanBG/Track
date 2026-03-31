@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Автозона 33 - Система за пратки</title>
+    <title>Автозона 33 - Система за пратки + Черен списък</title>
     <style>
         :root { 
             --primary: #2ea44f; 
@@ -14,6 +14,7 @@
             --success: #28a745;
             --warning: #ffc107;
             --info: #17a2b8;
+            --blacklist: #dc3545;
         }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
@@ -26,6 +27,8 @@
         .btn-add:hover { background: #000; transform: translateY(-1px); }
         .btn-export { background: #6e7681; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .btn-export:hover { background: #5a6268; }
+        .btn-blacklist { background: var(--blacklist); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-blacklist:hover { background: #b02a37; }
         .order-card { background: #fff; border: 1px solid #e1e4e8; padding: 18px; margin-bottom: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: flex-start; border-left: 6px solid #ccc; transition: all 0.2s; position: relative; }
         .order-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateX(2px); }
         .status-travel { border-left-color: var(--email); }
@@ -50,6 +53,7 @@
         .toast.success { background: var(--success); }
         .toast.error { background: var(--danger); }
         .toast.info { background: var(--info); }
+        .toast.warning { background: var(--warning); color: #333; }
         
         .stats { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
         .stat-box { background: #f8f9fa; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #666; border: 1px solid #eee; }
@@ -57,7 +61,10 @@
         
         .last-check { font-size: 11px; color: #999; margin-top: 4px; }
         
-        /* Модален прозорец */
+        .order-count-badge { background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-left: 8px; cursor: pointer; transition: all 0.2s; display: inline-block; }
+        .order-count-badge:hover { background: var(--info); color: white; }
+        .blacklist-badge { background: var(--danger); color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-left: 8px; display: inline-block; }
+        
         .modal-overlay { 
             display: none; 
             position: fixed; 
@@ -79,6 +86,7 @@
             flex-direction: column; 
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
+        .modal-content.small { max-width: 600px; height: auto; max-height: 80vh; }
         .modal-header { 
             padding: 15px 20px; 
             background: var(--dark); 
@@ -133,14 +141,69 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-        .modal-info strong {
-            color: var(--dark);
-        }
         .modal-iframe { 
             flex: 1; 
             border: none; 
             width: 100%; 
             background: white;
+        }
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .blacklist-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        .blacklist-item:hover {
+            background: #f8f9fa;
+        }
+        .remove-blacklist {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .order-history-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid var(--warning);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+        .confirm-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 15px;
+        }
+        .btn-confirm {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .btn-cancel {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
         }
         
         @media (max-width: 900px) { 
@@ -160,6 +223,11 @@
             border-left-color: var(--warning);
             transition: all 0.3s;
         }
+        
+        .blacklist-warning {
+            border-left-color: var(--blacklist);
+            background: #fff5f5;
+        }
     </style>
 </head>
 <body>
@@ -168,6 +236,7 @@
     <div class="header">
         <div class="brand">🏎️ Автозона 33</div>
         <div style="display: flex; gap: 10px;">
+            <button class="btn-blacklist" onclick="openBlacklistModal()">⚠️ Черен списък</button>
             <button class="btn-export" onclick="exportToCSV()">📥 Excel</button>
             <button class="btn-export" onclick="exportJSON()" style="background: var(--primary);">💾 Запази</button>
             <button class="btn-export" onclick="document.getElementById('importFile').click()" style="background: var(--info);">📂 Зареди</button>
@@ -180,6 +249,7 @@
         <div class="stat-box">🚚 Пътуват: <span id="travelCount">0</span></div>
         <div class="stat-box">✅ Доставени: <span id="doneCount">0</span></div>
         <div class="stat-box">⚠️ Проблеми: <span id="issueCount">0</span></div>
+        <div class="stat-box">⛔ Черен списък: <span id="blacklistCount">0</span></div>
     </div>
     
     <div class="admin-panel">
@@ -192,7 +262,7 @@
             <option value="boxnow">BoxNow</option>
             <option value="sameday">Sameday</option>
         </select>
-        <button class="btn-add" onclick="addOrder()">ДОБАВИ</button>
+        <button class="btn-add" onclick="addOrderWithCheck()">ДОБАВИ</button>
     </div>
 
     <input type="text" id="search" style="width:100%; margin-bottom:20px; padding:12px; border:2px solid #eee; border-radius:10px;" placeholder="🔍 Търси по име или номер..." onkeyup="render()">
@@ -201,7 +271,7 @@
 
 <div id="toast" class="toast"></div>
 
-<!-- Модален прозорец за проверка -->
+<!-- Модален прозорец за проверка на пратка -->
 <div id="checkModal" class="modal-overlay" onclick="closeModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -216,9 +286,48 @@
     </div>
 </div>
 
+<!-- Модален прозорец за черен списък -->
+<div id="blacklistModal" class="modal-overlay" onclick="closeBlacklistModal(event)">
+    <div class="modal-content small" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>⚠️ Черен списък с проблемни клиенти</h3>
+            <button class="modal-close" onclick="closeBlacklistModal()">✖ Затвори</button>
+        </div>
+        <div class="modal-body" id="blacklistBody"></div>
+    </div>
+</div>
+
+<!-- Модален прозорец за история на поръчките -->
+<div id="historyModal" class="modal-overlay" onclick="closeHistoryModal(event)">
+    <div class="modal-content small" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 id="historyTitle">📋 История на поръчките</h3>
+            <button class="modal-close" onclick="closeHistoryModal()">✖ Затвори</button>
+        </div>
+        <div class="modal-body" id="historyBody"></div>
+    </div>
+</div>
+
+<!-- Модален прозорец за предупреждение при повторен клиент -->
+<div id="warningModal" class="modal-overlay" onclick="closeWarningModal(event)">
+    <div class="modal-content small" onclick="event.stopPropagation()">
+        <div class="modal-header" style="background: var(--warning); color: #333;">
+            <h3>⚠️ ВНИМАНИЕ: Повторен клиент</h3>
+            <button class="modal-close" onclick="closeWarningModal()" style="background: #333;">✖</button>
+        </div>
+        <div class="modal-body" id="warningBody"></div>
+        <div class="confirm-buttons" style="padding: 15px; border-top: 1px solid #eee;">
+            <button class="btn-confirm" id="confirmAddBtn">✅ Въпреки това добави</button>
+            <button class="btn-cancel" onclick="closeWarningModal()">❌ Откажи</button>
+        </div>
+    </div>
+</div>
+
 <script>
     let orders = JSON.parse(localStorage.getItem('autozonaOrders') || '[]');
+    let blacklist = JSON.parse(localStorage.getItem('autozonaBlacklist') || '[]');
     let currentHighlightId = null;
+    let pendingOrder = null;
 
     function showToast(message, type = '') {
         const toast = document.getElementById('toast');
@@ -247,7 +356,64 @@
         return cleaned;
     }
 
-    function addOrder() {
+    function getClientOrders(name, phone) {
+        return orders.filter(o => {
+            const nameMatch = o.name.toLowerCase().trim() === name.toLowerCase().trim();
+            const phoneMatch = phone && o.phone && o.phone === phone;
+            return nameMatch || phoneMatch;
+        });
+    }
+
+    function isInBlacklist(name, phone) {
+        return blacklist.some(b => {
+            const nameMatch = b.name.toLowerCase().trim() === name.toLowerCase().trim();
+            const phoneMatch = phone && b.phone === phone;
+            return nameMatch || phoneMatch;
+        });
+    }
+
+    function addToBlacklist(name, phone, reason = 'Маркиран като проблем') {
+        if (!name) return;
+        
+        const existing = blacklist.find(b => b.name.toLowerCase().trim() === name.toLowerCase().trim());
+        
+        if (existing) {
+            existing.count = (existing.count || 1) + 1;
+            existing.reason = reason;
+            existing.dateAdded = new Date().toLocaleString('bg-BG');
+            existing.phone = phone || existing.phone;
+        } else {
+            blacklist.push({
+                id: Date.now(),
+                name: name,
+                phone: phone || '',
+                reason: reason,
+                dateAdded: new Date().toLocaleString('bg-BG'),
+                count: 1
+            });
+        }
+        
+        saveBlacklist();
+        showToast(`⚠️ ${name} е добавен в черния списък!`, 'warning');
+        render();
+    }
+
+    function removeFromBlacklist(id) {
+        blacklist = blacklist.filter(b => b.id !== id);
+        saveBlacklist();
+        showToast('Клиентът е премахнат от черния списък', 'success');
+        render();
+        if (document.getElementById('blacklistBody').innerHTML) {
+            renderBlacklistModal();
+        }
+    }
+
+    function saveBlacklist() {
+        localStorage.setItem('autozonaBlacklist', JSON.stringify(blacklist));
+        document.getElementById('blacklistCount').textContent = blacklist.length;
+    }
+
+    function addOrderWithCheck() {
         const name = document.getElementById('custName').value.trim();
         const phone = formatPhone(document.getElementById('custPhone').value);
         const num = document.getElementById('trackNo').value.trim();
@@ -264,6 +430,50 @@
             return;
         }
         
+        // Проверка за повторен клиент
+        const clientOrders = getClientOrders(name, phone);
+        const inBlacklistFlag = isInBlacklist(name, phone);
+        
+        if (clientOrders.length > 0 || inBlacklistFlag) {
+            pendingOrder = { name, phone, num, courier };
+            
+            let warningHtml = `
+                <div class="warning-box">
+                    <strong>⚠️ ВНИМАНИЕ!</strong><br><br>
+            `;
+            
+            if (clientOrders.length > 0) {
+                const lastOrder = clientOrders[clientOrders.length - 1];
+                const statusText = { 'travel': '🚚 Пътува', 'done': '✅ Доставена', 'issue': '⚠️ Проблем' }[lastOrder.status];
+                warningHtml += `
+                    <strong>📞 Този клиент вече има ${clientOrders.length} поръчки:</strong><br>
+                    • Последна поръчка: ${lastOrder.num} (${getCourierName(lastOrder.courier)})<br>
+                    • Статус: ${statusText}<br>
+                    • Дата: ${lastOrder.date}<br><br>
+                `;
+            }
+            
+            if (inBlacklistFlag) {
+                const blacklistEntry = blacklist.find(b => b.name.toLowerCase().trim() === name.toLowerCase().trim());
+                warningHtml += `
+                    <strong style="color: var(--danger);">🔴 КЛИЕНТЪТ Е В ЧЕРЕН СПИСЪК!</strong><br>
+                    • Причина: ${blacklistEntry?.reason || 'Маркиран като проблем'}<br>
+                    • Добавен на: ${blacklistEntry?.dateAdded || 'неизвестно'}<br>
+                    • Брой проблеми: ${blacklistEntry?.count || 1}<br>
+                `;
+            }
+            
+            warningHtml += `</div>`;
+            document.getElementById('warningBody').innerHTML = warningHtml;
+            document.getElementById('warningModal').classList.add('show');
+            return;
+        }
+        
+        // Ако няма предупреждение, добавяме директно
+        executeAddOrder(name, phone, num, courier);
+    }
+
+    function executeAddOrder(name, phone, num, courier) {
         orders.unshift({ 
             id: Date.now(), 
             name, 
@@ -280,8 +490,19 @@
         render();
         showToast('Пратката е добавена успешно!', 'success');
         
-        ['custName', 'custPhone', 'trackNo'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('custName').value = '';
+        document.getElementById('custPhone').value = '';
+        document.getElementById('trackNo').value = '';
         document.getElementById('custName').focus();
+        
+        pendingOrder = null;
+        closeWarningModal();
+    }
+
+    function confirmAddOrder() {
+        if (pendingOrder) {
+            executeAddOrder(pendingOrder.name, pendingOrder.phone, pendingOrder.num, pendingOrder.courier);
+        }
     }
 
     function getTrackUrl(o) {
@@ -310,7 +531,6 @@
         const externalLink = document.getElementById('modalExternalLink');
         const url = getTrackUrl(order);
         
-        // Информация за пратката
         modalInfo.innerHTML = `
             <span><strong>${escapeHtml(order.name)}</strong> | ${getCourierName(order.courier)}: ${order.num}</span>
             <span style="font-size: 12px; color: #666;">🕐 Последна проверка: ${order.lastCheck || 'няма'}</span>
@@ -319,22 +539,18 @@
         modalTitle.innerHTML = `📦 ${getCourierName(order.courier)} - ${order.num}`;
         externalLink.href = url;
         
-        // Зареждаме iframe
         iframe.src = url;
         modal.classList.add('show');
         
-        // Записваме време на проверка
         order.lastCheck = new Date().toLocaleString('bg-BG');
         save();
         
-        // Маркираме пратката в списъка
         highlightOrder(order.id);
         
         showToast(`Зареждане на ${getCourierName(order.courier)}...`, 'info');
     }
 
     function highlightOrder(id) {
-        // Премахваме предишния highlight
         if (currentHighlightId) {
             const prevCard = document.querySelector(`.order-card[data-id="${currentHighlightId}"]`);
             if (prevCard) {
@@ -342,13 +558,10 @@
             }
         }
         
-        // Маркираме новата пратка
         const card = document.querySelector(`.order-card[data-id="${id}"]`);
         if (card) {
             card.classList.add('highlight');
             currentHighlightId = id;
-            
-            // Скролваме до нея плавно
             card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }
@@ -360,7 +573,6 @@
             modal.classList.remove('show');
             iframe.src = '';
             
-            // Премахваме highlight след 2 секунди
             setTimeout(() => {
                 if (currentHighlightId) {
                     const card = document.querySelector(`.order-card[data-id="${currentHighlightId}"]`);
@@ -372,6 +584,75 @@
             }, 2000);
         }
     }
+
+    function openBlacklistModal() {
+        renderBlacklistModal();
+        document.getElementById('blacklistModal').classList.add('show');
+    }
+
+    function renderBlacklistModal() {
+        const body = document.getElementById('blacklistBody');
+        
+        if (blacklist.length === 0) {
+            body.innerHTML = '<div class="empty-state">📭 Няма клиенти в черния списък</div>';
+            return;
+        }
+        
+        body.innerHTML = blacklist.map(b => `
+            <div class="blacklist-item">
+                <div>
+                    <strong>${escapeHtml(b.name)}</strong><br>
+                    <small>📞 ${b.phone || '---'} | 📅 ${b.dateAdded}</small><br>
+                    <small>⚠️ Причина: ${escapeHtml(b.reason)} | 🔢 Проблеми: ${b.count || 1}</small>
+                </div>
+                <button class="remove-blacklist" onclick="removeFromBlacklist(${b.id})">Премахни</button>
+            </div>
+        `).join('');
+    }
+
+    function closeBlacklistModal(event) {
+        if (!event || event.target.id === 'blacklistModal' || event.target.classList.contains('modal-close')) {
+            document.getElementById('blacklistModal').classList.remove('show');
+        }
+    }
+
+    function openHistoryModal(clientName, clientPhone, ordersList) {
+        const title = document.getElementById('historyTitle');
+        const body = document.getElementById('historyBody');
+        
+        title.innerHTML = `📋 История на поръчките: ${escapeHtml(clientName)}`;
+        
+        if (ordersList.length === 0) {
+            body.innerHTML = '<div class="empty-state">📭 Няма намерени поръчки</div>';
+        } else {
+            body.innerHTML = ordersList.map(o => {
+                const statusText = { 'travel': '🚚 Пътува', 'done': '✅ Доставена', 'issue': '⚠️ Проблем' }[o.status];
+                return `
+                    <div class="order-history-item">
+                        <strong>📦 ${getCourierName(o.courier)}: ${o.num}</strong><br>
+                        <small>📅 ${o.date} | ${statusText}</small>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        document.getElementById('historyModal').classList.add('show');
+    }
+
+    function closeHistoryModal(event) {
+        if (!event || event.target.id === 'historyModal' || event.target.classList.contains('modal-close')) {
+            document.getElementById('historyModal').classList.remove('show');
+        }
+    }
+
+    function closeWarningModal(event) {
+        if (!event || event.target.id === 'warningModal' || event.target.classList.contains('modal-close')) {
+            document.getElementById('warningModal').classList.remove('show');
+            pendingOrder = null;
+        }
+    }
+
+    document.getElementById('confirmAddBtn').onclick = confirmAddOrder;
 
     function checkCourierStatus(id) {
         const o = orders.find(x => x.id === id);
@@ -444,8 +725,15 @@
 
     function changeStatus(id) {
         const o = orders.find(x => x.id === id);
+        const oldStatus = o.status;
         const next = { 'travel': 'done', 'done': 'issue', 'issue': 'travel' };
         o.status = next[o.status];
+        
+        // Ако статусът става "issue" (проблем), добавяме в черния списък
+        if (o.status === 'issue' && oldStatus !== 'issue') {
+            addToBlacklist(o.name, o.phone, 'Маркиран като проблем при промяна на статус');
+        }
+        
         save(); 
         render();
         showToast('Статусът е обновен!', 'success');
@@ -466,16 +754,17 @@
     }
 
     function exportJSON() {
-        if (orders.length === 0) {
-            showToast('Няма поръчки за експорт!', 'error');
+        if (orders.length === 0 && blacklist.length === 0) {
+            showToast('Няма данни за експорт!', 'error');
             return;
         }
         
         const data = {
             app: 'Avtozona33',
-            version: '1.0',
+            version: '2.0',
             exportedAt: new Date().toISOString(),
-            orders: orders
+            orders: orders,
+            blacklist: blacklist
         };
         
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -486,7 +775,7 @@
         link.click();
         document.body.removeChild(link);
         
-        showToast(`✅ Експортирани ${orders.length} поръчки!`, 'success');
+        showToast(`✅ Експортирани ${orders.length} поръчки и ${blacklist.length} в черен списък!`, 'success');
     }
 
     function handleImport(event) {
@@ -514,7 +803,7 @@
                 }
                 
                 if (orders.length > 0) {
-                    const confirmMsg = `Имате ${orders.length} текущи поръчки.\n\nФайлът съдържа ${data.orders.length} поръчки.\n\nНатиснете OK за ОБЕДИНЯВАНЕ\nили Cancel за ОТМЯНА.`;
+                    const confirmMsg = `Имате ${orders.length} текущи поръчки.\n\nФайлът съдържа ${data.orders.length} поръчки и ${data.blacklist?.length || 0} в черен списък.\n\nНатиснете OK за ОБЕДИНЯВАНЕ\nили Cancel за ОТМЯНА.`;
                     
                     if (!confirm(confirmMsg)) {
                         event.target.value = '';
@@ -524,9 +813,21 @@
                     const existingIds = new Set(orders.map(o => o.id));
                     const newOrders = data.orders.filter(o => !existingIds.has(o.id));
                     orders = [...orders, ...newOrders];
+                    
+                    if (data.blacklist && Array.isArray(data.blacklist)) {
+                        const existingBlacklistNames = new Set(blacklist.map(b => b.name.toLowerCase().trim()));
+                        const newBlacklist = data.blacklist.filter(b => !existingBlacklistNames.has(b.name.toLowerCase().trim()));
+                        blacklist = [...blacklist, ...newBlacklist];
+                        saveBlacklist();
+                    }
+                    
                     showToast(`✅ Добавени ${newOrders.length} нови поръчки! Общо: ${orders.length}`, 'success');
                 } else {
                     orders = data.orders;
+                    if (data.blacklist && Array.isArray(data.blacklist)) {
+                        blacklist = data.blacklist;
+                        saveBlacklist();
+                    }
                     showToast(`✅ Заредени ${orders.length} поръчки!`, 'success');
                 }
                 
@@ -566,6 +867,15 @@
         document.getElementById('travelCount').textContent = orders.filter(o => o.status === 'travel').length;
         document.getElementById('doneCount').textContent = orders.filter(o => o.status === 'done').length;
         document.getElementById('issueCount').textContent = orders.filter(o => o.status === 'issue').length;
+        document.getElementById('blacklistCount').textContent = blacklist.length;
+    }
+
+    function getClientOrderCount(name, phone) {
+        return orders.filter(o => {
+            const nameMatch = o.name.toLowerCase().trim() === name.toLowerCase().trim();
+            const phoneMatch = phone && o.phone && o.phone === phone;
+            return nameMatch || phoneMatch;
+        }).length;
     }
 
     function render() {
@@ -598,14 +908,22 @@
             };
             const statusInfo = statusConfig[o.status];
             
+            const orderCount = getClientOrderCount(o.name, o.phone);
+            const isBlacklisted = isInBlacklist(o.name, o.phone);
+            
             const lastCheckHtml = o.lastCheck ? `<div class="last-check">🕐 Последна проверка: ${o.lastCheck}</div>` : '';
             
             const card = document.createElement('div');
             card.className = `order-card status-${o.status}`;
+            if (isBlacklisted) card.classList.add('blacklist-warning');
             card.setAttribute('data-id', o.id);
+            
+            const countBadge = orderCount > 1 ? `<span class="order-count-badge" onclick="openHistoryModal('${escapeHtml(o.name)}', '${o.phone || ''}', getClientOrders('${escapeHtml(o.name)}', '${o.phone || ''}'))">${orderCount} поръчки 📋</span>` : '';
+            const blacklistBadge = isBlacklisted ? `<span class="blacklist-badge">⚠️ Черен списък</span>` : '';
+            
             card.innerHTML = `
                 <div class="order-info">
-                    <strong>${escapeHtml(o.name)}</strong>
+                    <strong>${escapeHtml(o.name)} ${countBadge} ${blacklistBadge}</strong>
                     <span>📞 ${o.phone || '---'} | 📅 ${o.date}</span>
                     <span class="copy-badge" onclick="copyTrackingNumber('${o.num}')">${getCourierName(o.courier)}: ${o.num} 📋</span>
                     ${lastCheckHtml}
@@ -623,21 +941,36 @@
     }
     
     function escapeHtml(text) {
+        if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
 
+    function getClientOrders(name, phone) {
+        return orders.filter(o => {
+            const nameMatch = o.name.toLowerCase().trim() === name.toLowerCase().trim();
+            const phoneMatch = phone && o.phone && o.phone === phone;
+            return nameMatch || phoneMatch;
+        });
+    }
+
     render();
+    saveBlacklist();
     
     document.querySelectorAll('.admin-panel input').forEach(input => {
         input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') addOrder();
+            if (e.key === 'Enter') addOrderWithCheck();
         });
     });
     
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeModal();
+        if (e.key === 'Escape') {
+            closeModal();
+            closeBlacklistModal();
+            closeHistoryModal();
+            closeWarningModal();
+        }
     });
 </script>
 </body>
