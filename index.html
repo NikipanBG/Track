@@ -133,6 +133,17 @@
             text-decoration: none;
             display: inline-block;
         }
+        .modal-info {
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
         .modal-body {
             padding: 20px;
             overflow-y: auto;
@@ -157,6 +168,13 @@
         .stats-summary-item .number { font-size: 24px; font-weight: bold; color: var(--dark); }
         .stats-summary-item .label { font-size: 12px; color: #666; }
         
+        .modal-iframe { 
+            flex: 1; 
+            border: none; 
+            width: 100%; 
+            background: white;
+        }
+        
         @media (max-width: 900px) { 
             .admin-panel { grid-template-columns: 1fr; } 
             .order-card { flex-direction: column; align-items: flex-start; gap: 15px; }
@@ -169,6 +187,11 @@
         .empty-state { text-align: center; padding: 40px; color: #666; font-size: 16px; }
         .highlight { background: #fff3cd; border-left-color: var(--warning); }
         .blacklist-warning { border-left-color: var(--blacklist); background: #fff5f5; }
+        .blacklist-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
+        .blacklist-item:hover { background: #f8f9fa; }
+        .remove-blacklist { background: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+        .order-history-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .warning-box { background: #fff3cd; border-left: 4px solid var(--warning); padding: 15px; margin-bottom: 15px; border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -404,7 +427,6 @@
         
         let filteredOrders = [...orders];
         
-        // Филтър по период
         if (period !== 'all') {
             const days = parseInt(period);
             const cutoffDate = new Date();
@@ -412,7 +434,6 @@
             filteredOrders = filteredOrders.filter(o => new Date(o.createdAt) >= cutoffDate);
         }
         
-        // Филтър по куриер
         if (courierFilter !== 'all') {
             filteredOrders = filteredOrders.filter(o => o.courier === courierFilter);
         }
@@ -423,7 +444,6 @@
         const issue = filteredOrders.filter(o => o.status === 'issue').length;
         const donePercent = total ? Math.round((done / total) * 100) : 0;
         
-        // Групиране по куриери
         const courierStats = {};
         filteredOrders.forEach(o => {
             const name = getCourierName(o.courier);
@@ -433,7 +453,6 @@
             if (o.status === 'issue') courierStats[name].issue++;
         });
         
-        // Групиране по дни (последните 7 дни)
         const last7Days = [];
         for (let i = 6; i >= 0; i--) {
             const date = new Date();
@@ -474,7 +493,6 @@
             </div>
         `;
         
-        // Графика по дни
         if (filteredOrders.length > 0) {
             html += `<div style="margin-top: 20px;"><strong>📅 Поръчки по дни</strong></div>`;
             last7Days.forEach(day => {
@@ -489,7 +507,6 @@
             });
         }
         
-        // Статистика по куриери
         if (Object.keys(courierStats).length > 0) {
             html += `<div style="margin-top: 20px;"><strong>🚚 Разпределение по куриери</strong></div>`;
             for (const [courier, stats] of Object.entries(courierStats)) {
@@ -688,8 +705,14 @@
 
     function save() { localStorage.setItem('autozonaOrders', JSON.stringify(orders)); updateStats(); }
 
-    // ========== Модални прозорци ==========
-    function openModal(order) {
+    // ========== Модален прозорец за проверка ==========
+    function checkCourierStatus(id) {
+        const o = orders.find(x => x.id === id);
+        if (!o) return;
+        openCheckModal(o);
+    }
+
+    function openCheckModal(order) {
         const modal = document.getElementById('checkModal');
         const iframe = document.getElementById('checkIframe');
         const modalInfo = document.getElementById('modalInfo');
@@ -697,30 +720,81 @@
         const externalLink = document.getElementById('modalExternalLink');
         const url = getTrackUrl(order);
         
-        modalInfo.innerHTML = `<span><strong>${escapeHtml(order.name)}</strong> | ${getCourierName(order.courier)}: ${order.num}</span><span style="font-size: 12px;">🕐 Последна: ${order.lastCheck || 'няма'}</span>`;
+        if (!url) {
+            showToast('Невалиден линк за проследяване!', 'error');
+            return;
+        }
+        
+        modalInfo.innerHTML = `<span><strong>${escapeHtml(order.name)}</strong> | ${getCourierName(order.courier)}: ${order.num}</span><span style="font-size: 12px;">🕐 Последна проверка: ${order.lastCheck || 'няма'}</span>`;
         modalTitle.innerHTML = `📦 ${getCourierName(order.courier)} - ${order.num}`;
         externalLink.href = url;
+        externalLink.target = '_blank';
+        
+        // Зареждаме iframe
         iframe.src = url;
+        
+        // Показваме модала
         modal.classList.add('show');
+        
+        // Записваме време на проверка
         order.lastCheck = new Date().toLocaleString('bg-BG');
         save();
+        
+        // Маркираме пратката
         highlightOrder(order.id);
+        
+        showToast(`Зареждане на ${getCourierName(order.courier)}...`, 'info');
     }
 
     function highlightOrder(id) {
-        if (currentHighlightId) { const prev = document.querySelector(`.order-card[data-id="${currentHighlightId}"]`); if(prev) prev.classList.remove('highlight'); }
+        if (currentHighlightId) {
+            const prevCard = document.querySelector(`.order-card[data-id="${currentHighlightId}"]`);
+            if (prevCard) prevCard.classList.remove('highlight');
+        }
         const card = document.querySelector(`.order-card[data-id="${id}"]`);
-        if(card) { card.classList.add('highlight'); currentHighlightId = id; card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        if (card) {
+            card.classList.add('highlight');
+            currentHighlightId = id;
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     }
 
-    function closeModal(event) { if (!event || event.target.id === 'checkModal' || event.target.classList.contains('modal-close')) { document.getElementById('checkModal').classList.remove('show'); document.getElementById('checkIframe').src = ''; setTimeout(() => { if(currentHighlightId){ const c=document.querySelector(`.order-card[data-id="${currentHighlightId}"]`); if(c)c.classList.remove('highlight'); currentHighlightId=null; } }, 2000); } }
+    function closeModal(event) {
+        if (!event || event.target.id === 'checkModal' || event.target.classList.contains('modal-close')) {
+            const modal = document.getElementById('checkModal');
+            const iframe = document.getElementById('checkIframe');
+            modal.classList.remove('show');
+            iframe.src = '';
+            
+            setTimeout(() => {
+                if (currentHighlightId) {
+                    const card = document.querySelector(`.order-card[data-id="${currentHighlightId}"]`);
+                    if (card) card.classList.remove('highlight');
+                    currentHighlightId = null;
+                }
+            }, 2000);
+        }
+    }
 
     function openBlacklistModal() { renderBlacklistModal(); document.getElementById('blacklistModal').classList.add('show'); }
-    function renderBlacklistModal() { const body = document.getElementById('blacklistBody'); if(blacklist.length===0) { body.innerHTML='<div class="empty-state">📭 Няма клиенти в черния списък</div>'; return; } body.innerHTML = blacklist.map(b => `<div class="blacklist-item"><div><strong>${escapeHtml(b.name)}</strong><br><small>📞 ${b.phone||'---'} | 📅 ${b.dateAdded}</small><br><small>⚠️ ${escapeHtml(b.reason)} | 🔢 ${b.count||1} проблема</small></div><button class="remove-blacklist" onclick="removeFromBlacklist(${b.id})">Премахни</button></div>`).join(''); }
+    
+    function renderBlacklistModal() { 
+        const body = document.getElementById('blacklistBody'); 
+        if(blacklist.length===0) { body.innerHTML='<div class="empty-state">📭 Няма клиенти в черния списък</div>'; return; } 
+        body.innerHTML = blacklist.map(b => `<div class="blacklist-item"><div><strong>${escapeHtml(b.name)}</strong><br><small>📞 ${b.phone||'---'} | 📅 ${b.dateAdded}</small><br><small>⚠️ ${escapeHtml(b.reason)} | 🔢 ${b.count||1} проблема</small></div><button class="remove-blacklist" onclick="removeFromBlacklist(${b.id})">Премахни</button></div>`).join(''); 
+    }
+    
     function closeBlacklistModal(event) { if(!event||event.target.id==='blacklistModal'||event.target.classList.contains('modal-close')) document.getElementById('blacklistModal').classList.remove('show'); }
     
-    function openHistoryModal(clientName, clientPhone) { const clientOrders = orders.filter(o => o.name.toLowerCase().trim() === clientName.toLowerCase().trim() || (clientPhone && o.phone === clientPhone)); document.getElementById('historyTitle').innerHTML = `📋 История: ${escapeHtml(clientName)}`; document.getElementById('historyBody').innerHTML = clientOrders.length ? clientOrders.map(o => `<div class="order-history-item"><strong>📦 ${getCourierName(o.courier)}: ${o.num}</strong><br><small>📅 ${o.date} | ${o.status==='travel'?'🚚 Пътува':o.status==='done'?'✅ Доставена':'⚠️ Проблем'}</small></div>`).join('') : '<div class="empty-state">📭 Няма поръчки</div>'; document.getElementById('historyModal').classList.add('show'); }
+    function openHistoryModal(clientName, clientPhone) { 
+        const clientOrders = orders.filter(o => o.name.toLowerCase().trim() === clientName.toLowerCase().trim() || (clientPhone && o.phone === clientPhone)); 
+        document.getElementById('historyTitle').innerHTML = `📋 История: ${escapeHtml(clientName)}`; 
+        document.getElementById('historyBody').innerHTML = clientOrders.length ? clientOrders.map(o => `<div class="order-history-item"><strong>📦 ${getCourierName(o.courier)}: ${o.num}</strong><br><small>📅 ${o.date} | ${o.status==='travel'?'🚚 Пътува':o.status==='done'?'✅ Доставена':'⚠️ Проблем'}</small></div>`).join('') : '<div class="empty-state">📭 Няма поръчки</div>'; 
+        document.getElementById('historyModal').classList.add('show'); 
+    }
+    
     function closeHistoryModal(event) { if(!event||event.target.id==='historyModal'||event.target.classList.contains('modal-close')) document.getElementById('historyModal').classList.remove('show'); }
+    
     function closeWarningModal(event) { if(!event||event.target.id==='warningModal'||event.target.classList.contains('modal-close')) { document.getElementById('warningModal').classList.remove('show'); pendingOrder=null; } }
 
     // ========== Експорт/Импорт ==========
@@ -785,7 +859,6 @@
     }
 
     function getClientOrderCount(name, phone) { return orders.filter(o => o.name.toLowerCase().trim() === name.toLowerCase().trim() || (phone && o.phone === phone)).length; }
-    function getClientOrders(name, phone) { return orders.filter(o => o.name.toLowerCase().trim() === name.toLowerCase().trim() || (phone && o.phone === phone)); }
 
     function render() {
         const search = document.getElementById('search').value.toLowerCase();
@@ -831,11 +904,6 @@
                 </div>`;
             list.appendChild(card);
         });
-    }
-
-    function checkCourierStatus(id) {
-        const o = orders.find(x => x.id === id);
-        openModal(o);
     }
 
     // ========== Инициализация ==========
