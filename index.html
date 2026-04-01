@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Автозона 33 - Система за пратки + Черен списък</title>
+    <title>Автозона 33 - Система за пратки</title>
     <style>
         :root { 
             --primary: #2ea44f; 
@@ -29,6 +29,8 @@
         .btn-export:hover { background: #5a6268; }
         .btn-blacklist { background: var(--blacklist); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .btn-blacklist:hover { background: #b02a37; }
+        .btn-stats { background: var(--info); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-stats:hover { background: #138496; }
         .sort-buttons { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
         .sort-btn { background: #e9ecef; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s; }
         .sort-btn.active { background: var(--primary); color: white; }
@@ -63,7 +65,8 @@
         .toast.warning { background: var(--warning); color: #333; }
         
         .stats { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
-        .stat-box { background: #f8f9fa; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #666; border: 1px solid #eee; }
+        .stat-box { background: #f8f9fa; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #666; border: 1px solid #eee; cursor: pointer; transition: all 0.2s; }
+        .stat-box:hover { background: #e9ecef; transform: translateY(-2px); }
         .stat-box span { color: var(--dark); font-size: 18px; margin-left: 5px; }
         
         .last-check { font-size: 11px; color: #999; margin-top: 4px; }
@@ -93,7 +96,7 @@
             flex-direction: column; 
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
-        .modal-content.small { max-width: 500px; height: auto; max-height: 80vh; }
+        .modal-content.small { max-width: 600px; height: auto; max-height: 80vh; }
         .modal-header { 
             padding: 15px 20px; 
             background: var(--dark); 
@@ -135,13 +138,24 @@
             overflow-y: auto;
             flex: 1;
         }
-        .qr-code { text-align: center; padding: 20px; }
-        .qr-code canvas { margin: 10px auto; border: 1px solid #ddd; padding: 10px; border-radius: 12px; background: white; }
-        .chart-container { margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 8px; }
-        .chart-bar { display: flex; align-items: center; margin: 5px 0; gap: 10px; }
-        .chart-bar-label { width: 100px; font-size: 12px; }
-        .chart-bar-fill { background: var(--primary); height: 24px; border-radius: 4px; color: white; line-height: 24px; padding-left: 8px; font-size: 12px; }
-        .note-input { width: 100%; margin-top: 8px; padding: 8px; border-radius: 6px; resize: vertical; }
+        .stats-filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .stats-filters select, .stats-filters input {
+            flex: 1;
+            min-width: 150px;
+        }
+        .chart-container { margin: 20px 0; }
+        .chart-bar { display: flex; align-items: center; margin: 8px 0; gap: 10px; }
+        .chart-bar-label { width: 100px; font-size: 12px; font-weight: 500; }
+        .chart-bar-fill { background: var(--primary); height: 32px; border-radius: 6px; color: white; line-height: 32px; padding-left: 10px; font-size: 13px; transition: width 0.3s; }
+        .stats-summary { background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+        .stats-summary-item { text-align: center; }
+        .stats-summary-item .number { font-size: 24px; font-weight: bold; color: var(--dark); }
+        .stats-summary-item .label { font-size: 12px; color: #666; }
         
         @media (max-width: 900px) { 
             .admin-panel { grid-template-columns: 1fr; } 
@@ -155,10 +169,7 @@
         .empty-state { text-align: center; padding: 40px; color: #666; font-size: 16px; }
         .highlight { background: #fff3cd; border-left-color: var(--warning); }
         .blacklist-warning { border-left-color: var(--blacklist); background: #fff5f5; }
-        .notification-badge { position: fixed; top: 20px; right: 20px; background: var(--danger); color: white; border-radius: 20px; padding: 8px 16px; font-size: 12px; z-index: 1500; animation: pulse 1s; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs2-fix@0.0.1/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -166,6 +177,7 @@
     <div class="header">
         <div class="brand">🏎️ Автозона 33</div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn-stats" onclick="openStatsModal()">📊 Статистика</button>
             <button class="btn-blacklist" onclick="openBlacklistModal()">⚠️ Черен списък</button>
             <button class="btn-export" onclick="exportToCSV()">📥 Excel</button>
             <button class="btn-export" onclick="exportJSON()" style="background: var(--primary);">💾 Запази</button>
@@ -174,17 +186,13 @@
     </div>
     <input type="file" id="importFile" style="display: none;" accept=".json" onchange="handleImport(event)">
     
-    <div class="stats" id="stats">
-        <div class="stat-box">📦 Общо: <span id="totalCount">0</span></div>
-        <div class="stat-box">🚚 Пътуват: <span id="travelCount">0</span></div>
-        <div class="stat-box">✅ Доставени: <span id="doneCount">0</span></div>
-        <div class="stat-box">⚠️ Проблеми: <span id="issueCount">0</span></div>
-        <div class="stat-box">📊 Доставени: <span id="donePercent">0%</span></div>
-        <div class="stat-box">⛔ Черен списък: <span id="blacklistCount">0</span></div>
+    <div class="stats">
+        <div class="stat-box" onclick="openStatsModal()">📦 Общо: <span id="totalCount">0</span></div>
+        <div class="stat-box" onclick="openStatsModal()">🚚 Пътуват: <span id="travelCount">0</span></div>
+        <div class="stat-box" onclick="openStatsModal()">✅ Доставени: <span id="doneCount">0</span></div>
+        <div class="stat-box" onclick="openStatsModal()">⚠️ Проблеми: <span id="issueCount">0</span></div>
+        <div class="stat-box" onclick="openStatsModal()">⛔ Черен списък: <span id="blacklistCount">0</span></div>
     </div>
-    
-    <!-- Графика по дни -->
-    <div id="chartContainer" class="chart-container" style="margin-bottom: 20px; display: none;"></div>
     
     <div class="sort-buttons">
         <button class="sort-btn" data-sort="date-desc">📅 Нови най-отгоре</button>
@@ -228,18 +236,31 @@
     </div>
 </div>
 
-<!-- Модален прозорец за QR код (Viber на компютър) -->
-<div id="qrModal" class="modal-overlay" onclick="closeQRModal(event)">
+<!-- Модален прозорец за статистика -->
+<div id="statsModal" class="modal-overlay" onclick="closeStatsModal(event)">
     <div class="modal-content small" onclick="event.stopPropagation()">
         <div class="modal-header">
-            <h3>📱 Сподели във Viber</h3>
-            <button class="modal-close" onclick="closeQRModal()">✖</button>
+            <h3>📊 Детайлна статистика</h3>
+            <button class="modal-close" onclick="closeStatsModal()">✖</button>
         </div>
         <div class="modal-body">
-            <div id="qrText" style="margin-bottom: 15px; padding: 10px; background: #f5f5f5; border-radius: 8px; word-break: break-all;"></div>
-            <div id="qrcode" class="qr-code"></div>
-            <p style="text-align: center; font-size: 12px; color: #666;">Сканирайте QR кода с телефона си, за да споделите във Viber</p>
-            <button onclick="copyViberQRText()" style="width: 100%; padding: 10px; background: var(--viber); color: white; border: none; border-radius: 8px; cursor: pointer;">📋 Копирай текста</button>
+            <div class="stats-filters">
+                <select id="statsPeriod">
+                    <option value="all">📅 Всички</option>
+                    <option value="7">📅 Последните 7 дни</option>
+                    <option value="30">📅 Последните 30 дни</option>
+                    <option value="90">📅 Последните 90 дни</option>
+                </select>
+                <select id="statsCourier">
+                    <option value="all">🚚 Всички куриери</option>
+                    <option value="econt">Еконт</option>
+                    <option value="speedy">Спиди</option>
+                    <option value="boxnow">BoxNow</option>
+                    <option value="sameday">Sameday</option>
+                </select>
+                <button onclick="refreshStats()" style="background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px;">🔄 Обнови</button>
+            </div>
+            <div id="statsContent"></div>
         </div>
     </div>
 </div>
@@ -306,8 +327,6 @@
     let pendingOrder = null;
     let currentNoteOrderId = null;
     let currentSort = 'date-desc';
-    let pendingViberText = '';
-    let qrCodeInstance = null;
 
     // ========== Helper Functions ==========
     function showToast(message, type = '') {
@@ -349,31 +368,70 @@
         div.textContent = text;
         return div.innerHTML;
     }
+    
+    // ========== Коригирани линкове за проследяване ==========
+    function getTrackUrl(o) {
+        if (o.courier === 'econt') {
+            return `https://www.econt.com/bg/track/${o.num}`;
+        }
+        if (o.courier === 'speedy') {
+            return `https://www.speedy.bg/bg/tracking/${o.num}`;
+        }
+        if (o.courier === 'boxnow') {
+            return `https://www.boxnow.bg/търсене/${o.num}`;
+        }
+        if (o.courier === 'sameday') {
+            return `https://tracking.sameday.bg/${o.num}`;
+        }
+        return "";
+    }
 
-    // ========== Статистика и графика ==========
-    function updateStats() {
-        document.getElementById('totalCount').textContent = orders.length;
-        const travel = orders.filter(o => o.status === 'travel').length;
-        const done = orders.filter(o => o.status === 'done').length;
-        const issue = orders.filter(o => o.status === 'issue').length;
-        document.getElementById('travelCount').textContent = travel;
-        document.getElementById('doneCount').textContent = done;
-        document.getElementById('issueCount').textContent = issue;
-        document.getElementById('blacklistCount').textContent = blacklist.length;
-        
-        const percent = orders.length ? Math.round((done / orders.length) * 100) : 0;
-        document.getElementById('donePercent').textContent = `${percent}%`;
-        
-        renderChart();
+    // ========== Статистика в модален прозорец ==========
+    function openStatsModal() {
+        refreshStats();
+        document.getElementById('statsModal').classList.add('show');
     }
     
-    function renderChart() {
-        const container = document.getElementById('chartContainer');
-        if (orders.length === 0) {
-            container.style.display = 'none';
-            return;
+    function closeStatsModal(event) {
+        if (!event || event.target.id === 'statsModal' || event.target.classList.contains('modal-close')) {
+            document.getElementById('statsModal').classList.remove('show');
         }
-        container.style.display = 'block';
+    }
+    
+    function refreshStats() {
+        const period = document.getElementById('statsPeriod').value;
+        const courierFilter = document.getElementById('statsCourier').value;
+        
+        let filteredOrders = [...orders];
+        
+        // Филтър по период
+        if (period !== 'all') {
+            const days = parseInt(period);
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - days);
+            filteredOrders = filteredOrders.filter(o => new Date(o.createdAt) >= cutoffDate);
+        }
+        
+        // Филтър по куриер
+        if (courierFilter !== 'all') {
+            filteredOrders = filteredOrders.filter(o => o.courier === courierFilter);
+        }
+        
+        const total = filteredOrders.length;
+        const travel = filteredOrders.filter(o => o.status === 'travel').length;
+        const done = filteredOrders.filter(o => o.status === 'done').length;
+        const issue = filteredOrders.filter(o => o.status === 'issue').length;
+        const donePercent = total ? Math.round((done / total) * 100) : 0;
+        
+        // Групиране по куриери
+        const courierStats = {};
+        filteredOrders.forEach(o => {
+            const name = getCourierName(o.courier);
+            if (!courierStats[name]) courierStats[name] = { total: 0, done: 0, issue: 0 };
+            courierStats[name].total++;
+            if (o.status === 'done') courierStats[name].done++;
+            if (o.status === 'issue') courierStats[name].issue++;
+        });
         
         // Групиране по дни (последните 7 дни)
         const last7Days = [];
@@ -384,68 +442,72 @@
         }
         
         const dailyCounts = {};
-        orders.forEach(o => {
+        filteredOrders.forEach(o => {
             const date = o.date.split(',')[0];
             dailyCounts[date] = (dailyCounts[date] || 0) + 1;
         });
         
         const maxCount = Math.max(...Object.values(dailyCounts), 1);
         
-        let html = '<div style="font-size: 13px; font-weight: 600; margin-bottom: 10px;">📊 Поръчки по дни (последни 7 дни)</div>';
-        last7Days.forEach(day => {
-            const count = dailyCounts[day] || 0;
-            const percent = (count / maxCount) * 100;
-            html += `
-                <div class="chart-bar">
-                    <div class="chart-bar-label">${day}</div>
-                    <div class="chart-bar-fill" style="width: ${Math.max(percent, 4)}%; background: ${count > 0 ? 'var(--primary)' : '#e9ecef'}">${count > 0 ? count : ''}</div>
+        let html = `
+            <div class="stats-summary">
+                <div class="stats-summary-item">
+                    <div class="number">${total}</div>
+                    <div class="label">📦 Общо пратки</div>
                 </div>
-            `;
-        });
-        container.innerHTML = html;
-    }
-    
-    function getAverageDeliveryTime() {
-        const delivered = orders.filter(o => o.status === 'done' && o.createdAt);
-        if (delivered.length === 0) return 'Няма данни';
-        let totalDays = 0;
-        delivered.forEach(o => {
-            const created = new Date(o.createdAt);
-            const deliveredDate = new Date(o.date);
-            const days = (deliveredDate - created) / (1000 * 60 * 60 * 24);
-            totalDays += Math.max(days, 0);
-        });
-        const avg = (totalDays / delivered.length).toFixed(1);
-        return `${avg} дни`;
-    }
-
-    // ========== Сортиране ==========
-    function sortOrders(ordersToSort, sortType) {
-        const sorted = [...ordersToSort];
-        switch(sortType) {
-            case 'date-desc':
-                return sorted.sort((a, b) => b.createdAt - a.createdAt);
-            case 'date-asc':
-                return sorted.sort((a, b) => a.createdAt - b.createdAt);
-            case 'name':
-                return sorted.sort((a, b) => a.name.localeCompare(b.name, 'bg'));
-            case 'status':
-                const statusOrder = { 'travel': 1, 'done': 2, 'issue': 3 };
-                return sorted.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
-            case 'courier':
-                return sorted.sort((a, b) => a.courier.localeCompare(b.courier));
-            default:
-                return sorted;
+                <div class="stats-summary-item">
+                    <div class="number">${travel}</div>
+                    <div class="label">🚚 Пътуват</div>
+                </div>
+                <div class="stats-summary-item">
+                    <div class="number">${done}</div>
+                    <div class="label">✅ Доставени</div>
+                </div>
+                <div class="stats-summary-item">
+                    <div class="number">${issue}</div>
+                    <div class="label">⚠️ Проблемни</div>
+                </div>
+                <div class="stats-summary-item">
+                    <div class="number">${donePercent}%</div>
+                    <div class="label">📊 Успеваемост</div>
+                </div>
+            </div>
+        `;
+        
+        // Графика по дни
+        if (filteredOrders.length > 0) {
+            html += `<div style="margin-top: 20px;"><strong>📅 Поръчки по дни</strong></div>`;
+            last7Days.forEach(day => {
+                const count = dailyCounts[day] || 0;
+                const percent = (count / maxCount) * 100;
+                html += `
+                    <div class="chart-bar">
+                        <div class="chart-bar-label">${day}</div>
+                        <div class="chart-bar-fill" style="width: ${Math.max(percent, 4)}%; background: ${count > 0 ? 'var(--primary)' : '#e9ecef'}">${count > 0 ? count : ''}</div>
+                    </div>
+                `;
+            });
         }
-    }
-    
-    function setSort(type) {
-        currentSort = type;
-        document.querySelectorAll('.sort-btn').forEach(btn => {
-            if (btn.dataset.sort === type) btn.classList.add('active');
-            else btn.classList.remove('active');
-        });
-        render();
+        
+        // Статистика по куриери
+        if (Object.keys(courierStats).length > 0) {
+            html += `<div style="margin-top: 20px;"><strong>🚚 Разпределение по куриери</strong></div>`;
+            for (const [courier, stats] of Object.entries(courierStats)) {
+                const percent = stats.total ? Math.round((stats.done / stats.total) * 100) : 0;
+                html += `
+                    <div class="chart-bar">
+                        <div class="chart-bar-label">${courier}</div>
+                        <div class="chart-bar-fill" style="width: ${Math.max((stats.total / total) * 100, 4)}%; background: var(--info)">${stats.total} пратки (${percent}% доставени)</div>
+                    </div>
+                `;
+            }
+        }
+        
+        if (filteredOrders.length === 0) {
+            html = '<div class="empty-state">📭 Няма данни за избрания период и куриер</div>';
+        }
+        
+        document.getElementById('statsContent').innerHTML = html;
     }
 
     // ========== Черен списък ==========
@@ -509,42 +571,7 @@
         }
     }
 
-    // ========== QR код за Viber ==========
-    function showQRCode(text) {
-        pendingViberText = text;
-        document.getElementById('qrText').innerHTML = `<strong>Текст за споделяне:</strong><br>${escapeHtml(text.substring(0, 100))}...`;
-        
-        const qrDiv = document.getElementById('qrcode');
-        qrDiv.innerHTML = '';
-        
-        try {
-            qrCodeInstance = new QRCode(qrDiv, {
-                text: text,
-                width: 200,
-                height: 200,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.M
-            });
-        } catch(e) {
-            qrDiv.innerHTML = `<div style="padding: 20px;">📱 ${escapeHtml(text.substring(0, 50))}...</div>`;
-        }
-        
-        document.getElementById('qrModal').classList.add('show');
-    }
-    
-    function copyViberQRText() {
-        copyToClipboard(pendingViberText, true);
-    }
-    
-    function closeQRModal(event) {
-        if (!event || event.target.id === 'qrModal' || event.target.classList.contains('modal-close')) {
-            document.getElementById('qrModal').classList.remove('show');
-            pendingViberText = '';
-        }
-    }
-
-    // ========== Viber и известия ==========
+    // ========== Viber и комуникация ==========
     function getViberText(o) {
         const url = getTrackUrl(o);
         const hour = new Date().getHours();
@@ -562,7 +589,8 @@
             copyToClipboard(text, false);
             showToast('Отваряне на Viber...', 'success');
         } else {
-            showQRCode(text);
+            copyToClipboard(text, true);
+            showToast('Viber работи само на мобилни устройства. Текстът е копиран!', 'success');
         }
     }
 
@@ -597,14 +625,6 @@
     }
 
     // ========== Управление на поръчки ==========
-    function getTrackUrl(o) {
-        if (o.courier === 'econt') return `https://www.econt.com/services/track-shipment/${o.num}`;
-        if (o.courier === 'speedy') return `https://www.speedy.bg/bg/track-shipment?shipmentNumber=${o.num}`;
-        if (o.courier === 'boxnow') return `https://www.boxnow.bg/?track=${o.num}`;
-        if (o.courier === 'sameday') return `https://sameday.bg/#awb=${o.num}`;
-        return "";
-    }
-
     function changeStatus(id) {
         const o = orders.find(x => x.id === id);
         const oldStatus = o.status;
@@ -613,16 +633,6 @@
         
         if (o.status === 'issue' && oldStatus !== 'issue') {
             addToBlacklist(o.name, o.phone, 'Маркиран като проблем');
-        }
-        
-        // Известие при доставка
-        if (o.status === 'done' && oldStatus === 'travel') {
-            showToast(`✅ ${o.name} - пратката е доставена!`, 'success');
-            setTimeout(() => {
-                if (confirm(`📦 ${o.name}\n\nПратката е доставена!\n\nИскате ли да изпратите Viber съобщение?`)) {
-                    sendViber(id);
-                }
-            }, 500);
         }
         
         save(); render();
@@ -743,7 +753,37 @@
         reader.readAsText(file);
     }
 
+    // ========== Сортиране ==========
+    function sortOrders(ordersToSort, sortType) {
+        const sorted = [...ordersToSort];
+        switch(sortType) {
+            case 'date-desc': return sorted.sort((a, b) => b.createdAt - a.createdAt);
+            case 'date-asc': return sorted.sort((a, b) => a.createdAt - b.createdAt);
+            case 'name': return sorted.sort((a, b) => a.name.localeCompare(b.name, 'bg'));
+            case 'status': const statusOrder = { 'travel': 1, 'done': 2, 'issue': 3 }; return sorted.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+            case 'courier': return sorted.sort((a, b) => a.courier.localeCompare(b.courier));
+            default: return sorted;
+        }
+    }
+    
+    function setSort(type) {
+        currentSort = type;
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+            if (btn.dataset.sort === type) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        render();
+    }
+
     // ========== Рендиране ==========
+    function updateStats() {
+        document.getElementById('totalCount').textContent = orders.length;
+        document.getElementById('travelCount').textContent = orders.filter(o => o.status === 'travel').length;
+        document.getElementById('doneCount').textContent = orders.filter(o => o.status === 'done').length;
+        document.getElementById('issueCount').textContent = orders.filter(o => o.status === 'issue').length;
+        document.getElementById('blacklistCount').textContent = blacklist.length;
+    }
+
     function getClientOrderCount(name, phone) { return orders.filter(o => o.name.toLowerCase().trim() === name.toLowerCase().trim() || (phone && o.phone === phone)).length; }
     function getClientOrders(name, phone) { return orders.filter(o => o.name.toLowerCase().trim() === name.toLowerCase().trim() || (phone && o.phone === phone)); }
 
@@ -775,9 +815,10 @@
             card.innerHTML = `
                 <div class="order-info">
                     <strong>${escapeHtml(o.name)} ${countBadge} ${blacklistBadge}</strong>
-                    <span>📞 ${o.phone || '---'} | 📅 ${o.date} | ⏱️ Средно време: ${getAverageDeliveryTime()}</span>
+                    <span>📞 ${o.phone || '---'} | 📅 ${o.date}</span>
                     <span class="copy-badge" onclick="copyTrackingNumber('${o.num}')">${getCourierName(o.courier)}: ${o.num} 📋</span>
                     ${noteHtml}
+                    ${o.lastCheck ? `<div class="last-check">🕐 Последна проверка: ${o.lastCheck}</div>` : ''}
                 </div>
                 <div class="actions">
                     <button class="btn-action ${statusInfo.class}" onclick="changeStatus(${o.id})">${statusInfo.label}</button>
@@ -792,11 +833,16 @@
         });
     }
 
+    function checkCourierStatus(id) {
+        const o = orders.find(x => x.id === id);
+        openModal(o);
+    }
+
     // ========== Инициализация ==========
     document.querySelectorAll('.sort-btn').forEach(btn => { btn.addEventListener('click', () => setSort(btn.dataset.sort)); });
     document.getElementById('confirmAddBtn').onclick = confirmAddOrder;
     document.querySelectorAll('.admin-panel input').forEach(input => { input.addEventListener('keypress', (e) => { if (e.key === 'Enter') addOrderWithCheck(); }); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeModal(); closeBlacklistModal(); closeHistoryModal(); closeWarningModal(); closeNoteModal(); closeQRModal(); } });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeModal(); closeBlacklistModal(); closeHistoryModal(); closeWarningModal(); closeNoteModal(); closeStatsModal(); } });
     
     setSort('date-desc');
     saveBlacklist();
