@@ -15,12 +15,13 @@
             --warning: #ffc107;
             --info: #17a2b8;
             --blacklist: #dc3545;
+            --bank-check: #6f42c1;
         }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; flex-wrap: wrap; gap: 10px; }
         .brand { font-size: 24px; font-weight: 800; color: var(--dark); }
-        .admin-panel { display: grid; grid-template-columns: 1.5fr 1.2fr 1.2fr 1fr auto; gap: 12px; margin-bottom: 25px; background: #fafafa; padding: 20px; border-radius: 12px; border: 1px solid #eee; }
+        .admin-panel { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 0.8fr 0.8fr auto; gap: 12px; margin-bottom: 25px; background: #fafafa; padding: 20px; border-radius: 12px; border: 1px solid #eee; align-items: end; }
         input, select, button, textarea { padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; font-family: inherit; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(46, 164, 79, 0.1); }
         .btn-add { background: var(--dark); color: white; font-weight: bold; cursor: pointer; border: none; transition: all 0.2s; }
@@ -56,6 +57,8 @@
         .btn-status-done { background: var(--success); color: white; }
         .btn-status-issue { background: var(--danger); color: white; }
         .btn-note { background: var(--warning); color: #333; }
+        .btn-bank-check { background: var(--bank-check); color: white; }
+        .btn-bank-check.cleared { background: var(--success); }
         
         .toast { position: fixed; bottom: 20px; right: 20px; background: var(--dark); color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; opacity: 0; transform: translateY(20px); transition: all 0.3s; font-weight: 500; }
         .toast.show { opacity: 1; transform: translateY(0); }
@@ -74,6 +77,9 @@
         .order-count-badge { background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-left: 8px; cursor: pointer; transition: all 0.2s; display: inline-block; }
         .order-count-badge:hover { background: var(--info); color: white; }
         .blacklist-badge { background: var(--danger); color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-left: 8px; display: inline-block; }
+        .cash-badge { background: #20c997; color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-left: 8px; display: inline-block; }
+        .cash-badge.cleared { background: #198754; }
+        .shipping-badge { background: #fd7e14; color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-left: 8px; display: inline-block; }
         
         .modal-overlay { 
             display: none; 
@@ -175,6 +181,17 @@
             background: white;
         }
         
+        .payment-edit { 
+            display: flex; 
+            gap: 15px; 
+            margin: 10px 0; 
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
         @media (max-width: 900px) { 
             .admin-panel { grid-template-columns: 1fr; } 
             .order-card { flex-direction: column; align-items: flex-start; gap: 15px; }
@@ -215,6 +232,7 @@
         <div class="stat-box" onclick="openStatsModal()">✅ Доставени: <span id="doneCount">0</span></div>
         <div class="stat-box" onclick="openStatsModal()">⚠️ Проблеми: <span id="issueCount">0</span></div>
         <div class="stat-box" onclick="openStatsModal()">⛔ Черен списък: <span id="blacklistCount">0</span></div>
+        <div class="stat-box" onclick="openStatsModal()">💰 Общ НП: <span id="totalCashSum">0</span> лв</div>
     </div>
     
     <div class="sort-buttons">
@@ -234,6 +252,11 @@
             <option value="speedy">Спиди</option>
             <option value="boxnow">BoxNow</option>
             <option value="sameday">Sameday</option>
+        </select>
+        <input type="number" id="cashAmount" placeholder="💰 Наложен платеж (лв)" step="0.01" value="0">
+        <select id="shippingPaidBy">
+            <option value="customer">🚚 Куриерът е за сметка на клиента</option>
+            <option value="us">🏢 Куриерът е за наша сметка</option>
         </select>
         <button class="btn-add" onclick="addOrderWithCheck()">ДОБАВИ</button>
     </div>
@@ -392,13 +415,37 @@
         return div.innerHTML;
     }
     
-    // ========== Коригирани линкове за проследяване ==========
+    function getShippingPaidByText(value) {
+        return value === 'customer' ? '🚚 Клиент' : '🏢 Наша сметка';
+    }
+    
     function getTrackUrl(o) {
         if (o.courier === 'econt') return `https://www.econt.com/services/track-shipment/${o.num}`;
         if (o.courier === 'speedy') return `https://www.speedy.bg/bg/track-shipment?shipmentNumber=${o.num}`;
         if (o.courier === 'boxnow') return `https://www.boxnow.bg/?track=${o.num}`;
         if (o.courier === 'sameday') return `https://sameday.bg/#awb=${o.num}`;
         return "";
+    }
+
+    // ========== Функции за наложен платеж ==========
+    function toggleCashCleared(orderId) {
+        const order = orders.find(o => o.id === orderId);
+        if (order) {
+            order.cashCleared = !order.cashCleared;
+            save();
+            render();
+            showToast(order.cashCleared ? '✅ Наложеният платеж е отметнат като получен!' : '🔄 Наложеният платеж е върнат в чакащ режим', 'info');
+        }
+    }
+    
+    function updateTotalCashSum() {
+        const total = orders.reduce((sum, o) => {
+            if (o.cashAmount && o.status === 'done' && o.cashCleared) {
+                return sum + parseFloat(o.cashAmount);
+            }
+            return sum;
+        }, 0);
+        document.getElementById('totalCashSum').textContent = total.toFixed(2);
     }
 
     // ========== Статистика в модален прозорец ==========
@@ -435,6 +482,7 @@
         const done = filteredOrders.filter(o => o.status === 'done').length;
         const issue = filteredOrders.filter(o => o.status === 'issue').length;
         const donePercent = total ? Math.round((done / total) * 100) : 0;
+        const totalCash = filteredOrders.reduce((sum, o) => sum + (o.cashCleared && o.status === 'done' ? parseFloat(o.cashAmount || 0) : 0), 0);
         
         const courierStats = {};
         filteredOrders.forEach(o => {
@@ -481,6 +529,10 @@
                 <div class="stats-summary-item">
                     <div class="number">${donePercent}%</div>
                     <div class="label">📊 Успеваемост</div>
+                </div>
+                <div class="stats-summary-item">
+                    <div class="number">${totalCash.toFixed(2)} лв</div>
+                    <div class="label">💰 Прибрани НП</div>
                 </div>
             </div>
         `;
@@ -585,7 +637,8 @@
         const url = getTrackUrl(o);
         const hour = new Date().getHours();
         const greet = hour < 11 ? "Добро утро" : (hour < 18 ? "Добър ден" : "Добър вечер");
-        return `✨ ${greet}, ${o.name}!\n\nВашата поръчка от Автозона 33 е изпратена чрез ${o.courier.toUpperCase()}.\n\n📦 Товарителница №: ${o.num}\n\nЛинк за проследяване:\n${url}\n\nБлагодарим Ви за доверието! 🏎️`;
+        let cashText = o.cashAmount && o.cashAmount > 0 ? `\n💰 Наложен платеж: ${parseFloat(o.cashAmount).toFixed(2)} лв` : '';
+        return `✨ ${greet}, ${o.name}!\n\nВашата поръчка от Автозона 33 е изпратена чрез ${o.courier.toUpperCase()}.${cashText}\n\n📦 Товарителница №: ${o.num}\n\nЛинк за проследяване:\n${url}\n\nБлагодарим Ви за доверието! 🏎️`;
     }
 
     function sendViber(id) {
@@ -630,7 +683,8 @@
     function sendEmail(id) {
         const o = orders.find(x => x.id === id);
         const url = getTrackUrl(o);
-        window.location.href = `mailto:?subject=Пратка от Автозона 33&body=${encodeURIComponent(`Здравейте, ${o.name}!\n\nПратката Ви пътува с ${o.courier.toUpperCase()}.\nНомер: ${o.num}\nПроследяване: ${url}`)}`;
+        let cashText = o.cashAmount && o.cashAmount > 0 ? `\nНаложен платеж: ${parseFloat(o.cashAmount).toFixed(2)} лв` : '';
+        window.location.href = `mailto:?subject=Пратка от Автозона 33&body=${encodeURIComponent(`Здравейте, ${o.name}!\n\nПратката Ви пътува с ${o.courier.toUpperCase()}.\nНомер: ${o.num}${cashText}\nПроследяване: ${url}`)}`;
     }
 
     // ========== Управление на поръчки ==========
@@ -653,6 +707,8 @@
         const phone = formatPhone(document.getElementById('custPhone').value);
         const num = document.getElementById('trackNo').value.trim();
         const courier = document.getElementById('courier').value;
+        const cashAmount = parseFloat(document.getElementById('cashAmount').value) || 0;
+        const shippingPaidBy = document.getElementById('shippingPaidBy').value;
         
         if (!name || !num) { showToast('Моля попълнете име и номер!', 'error'); return; }
         if (orders.find(o => o.num === num && o.courier === courier)) { showToast('Тази товарителница вече съществува!', 'error'); return; }
@@ -661,7 +717,7 @@
         const inBlacklistFlag = isInBlacklist(name, phone);
         
         if (clientOrders.length > 0 || inBlacklistFlag) {
-            pendingOrder = { name, phone, num, courier };
+            pendingOrder = { name, phone, num, courier, cashAmount, shippingPaidBy };
             let warningHtml = `<div class="warning-box"><strong>⚠️ ВНИМАНИЕ!</strong><br><br>`;
             if (clientOrders.length > 0) {
                 const lastOrder = clientOrders[clientOrders.length - 1];
@@ -676,22 +732,46 @@
             document.getElementById('warningModal').classList.add('show');
             return;
         }
-        executeAddOrder(name, phone, num, courier);
+        executeAddOrder(name, phone, num, courier, cashAmount, shippingPaidBy);
     }
 
-    function executeAddOrder(name, phone, num, courier) {
-        orders.unshift({ id: Date.now(), name, phone, num, courier, status: 'travel', date: new Date().toLocaleString('bg-BG'), createdAt: Date.now(), lastCheck: null, note: '' });
+    function executeAddOrder(name, phone, num, courier, cashAmount, shippingPaidBy) {
+        orders.unshift({ 
+            id: Date.now(), 
+            name, 
+            phone, 
+            num, 
+            courier, 
+            status: 'travel', 
+            date: new Date().toLocaleString('bg-BG'), 
+            createdAt: Date.now(), 
+            lastCheck: null, 
+            note: '',
+            cashAmount: cashAmount,
+            cashCleared: false,
+            shippingPaidBy: shippingPaidBy
+        });
         save(); render();
         showToast('Пратката е добавена успешно!', 'success');
         document.getElementById('custName').value = '';
         document.getElementById('custPhone').value = '';
         document.getElementById('trackNo').value = '';
+        document.getElementById('cashAmount').value = '0';
         document.getElementById('custName').focus();
         pendingOrder = null;
         closeWarningModal();
     }
 
-    function confirmAddOrder() { if (pendingOrder) executeAddOrder(pendingOrder.name, pendingOrder.phone, pendingOrder.num, pendingOrder.courier); }
+    function confirmAddOrder() { 
+        if (pendingOrder) executeAddOrder(
+            pendingOrder.name, 
+            pendingOrder.phone, 
+            pendingOrder.num, 
+            pendingOrder.courier, 
+            pendingOrder.cashAmount, 
+            pendingOrder.shippingPaidBy
+        ); 
+    }
 
     function deleteOrder(id) { if(confirm("Сигурни ли сте?")) { orders = orders.filter(o => o.id !== id); save(); render(); showToast('Изтрита!', 'success'); } }
 
@@ -717,24 +797,17 @@
             return;
         }
         
-        modalInfo.innerHTML = `<span><strong>${escapeHtml(order.name)}</strong> | ${getCourierName(order.courier)}: ${order.num}</span><span style="font-size: 12px;">🕐 Последна проверка: ${order.lastCheck || 'няма'}</span>`;
+        modalInfo.innerHTML = `<span><strong>${escapeHtml(order.name)}</strong> | ${getCourierName(order.courier)}: ${order.num}${order.cashAmount ? ` | 💰 ${order.cashAmount.toFixed(2)} лв` : ''}</span><span style="font-size: 12px;">🕐 Последна проверка: ${order.lastCheck || 'няма'}</span>`;
         modalTitle.innerHTML = `📦 ${getCourierName(order.courier)} - ${order.num}`;
         externalLink.href = url;
         externalLink.target = '_blank';
         
-        // Зареждаме iframe
         iframe.src = url;
-        
-        // Показваме модала
         modal.classList.add('show');
         
-        // Записваме време на проверка
         order.lastCheck = new Date().toLocaleString('bg-BG');
         save();
-        
-        // Маркираме пратката
         highlightOrder(order.id);
-        
         showToast(`Зареждане на ${getCourierName(order.courier)}...`, 'info');
     }
 
@@ -781,7 +854,7 @@
     function openHistoryModal(clientName, clientPhone) { 
         const clientOrders = orders.filter(o => o.name.toLowerCase().trim() === clientName.toLowerCase().trim() || (clientPhone && o.phone === clientPhone)); 
         document.getElementById('historyTitle').innerHTML = `📋 История: ${escapeHtml(clientName)}`; 
-        document.getElementById('historyBody').innerHTML = clientOrders.length ? clientOrders.map(o => `<div class="order-history-item"><strong>📦 ${getCourierName(o.courier)}: ${o.num}</strong><br><small>📅 ${o.date} | ${o.status==='travel'?'🚚 Пътува':o.status==='done'?'✅ Доставена':'⚠️ Проблем'}</small></div>`).join('') : '<div class="empty-state">📭 Няма поръчки</div>'; 
+        document.getElementById('historyBody').innerHTML = clientOrders.length ? clientOrders.map(o => `<div class="order-history-item"><strong>📦 ${getCourierName(o.courier)}: ${o.num}</strong>${o.cashAmount ? `<span style="margin-left:8px;">💰 ${o.cashAmount.toFixed(2)} лв</span>` : ''}<br><small>📅 ${o.date} | ${o.status==='travel'?'🚚 Пътува':o.status==='done'?'✅ Доставена':'⚠️ Проблем'} | ${getShippingPaidByText(o.shippingPaidBy)}</small></div>`).join('') : '<div class="empty-state">📭 Няма поръчки</div>'; 
         document.getElementById('historyModal').classList.add('show'); 
     }
     
@@ -791,13 +864,15 @@
 
     // ========== Експорт/Импорт ==========
     function exportToCSV() {
-        let csv = "Дата,Клиент,Телефон,Куриер,Номер,Статус,Последна проверка,Бележки\n";
-        orders.forEach(o => { csv += `"${o.date}","${o.name}","${o.phone}","${o.courier}","${o.num}","${o.status==='travel'?'Пътува':o.status==='done'?'Доставена':'Проблем'}","${o.lastCheck||'Няма'}","${(o.note||'').replace(/"/g,'""')}"\n`; });
+        let csv = "Дата,Клиент,Телефон,Куриер,Номер,Статус,Наложен платеж,Платено в брой,Куриерът е за сметка на,Последна проверка,Бележки\n";
+        orders.forEach(o => { 
+            csv += `"${o.date}","${o.name}","${o.phone}","${o.courier}","${o.num}","${o.status==='travel'?'Пътува':o.status==='done'?'Доставена':'Проблем'}","${o.cashAmount ? o.cashAmount.toFixed(2) : '0'}","${o.cashCleared ? 'ДА' : 'НЕ'}","${o.shippingPaidBy === 'customer' ? 'Клиент' : 'Наша сметка'}","${o.lastCheck||'Няма'}","${(o.note||'').replace(/"/g,'""')}"\n`; 
+        });
         const blob = new Blob(["\ufeff"+csv], {type:'text/csv;charset=utf-8;'}); const link=document.createElement("a"); link.href=URL.createObjectURL(blob); link.download=`Avtozona33_${new Date().toISOString().split('T')[0]}.csv`; link.click(); showToast('Файлът е изтеглен!','success');
     }
 
     function exportJSON() {
-        const data = { app:'Avtozona33', version:'2.1', exportedAt:new Date().toISOString(), orders, blacklist };
+        const data = { app:'Avtozona33', version:'2.2', exportedAt:new Date().toISOString(), orders, blacklist };
         const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const link=document.createElement('a'); link.href=URL.createObjectURL(blob); link.download=`Avtozona33_Backup_${new Date().toISOString().split('T')[0]}.json`; link.click(); showToast(`✅ Експортирани ${orders.length} поръчки!`,'success');
     }
 
@@ -848,6 +923,7 @@
         document.getElementById('doneCount').textContent = orders.filter(o => o.status === 'done').length;
         document.getElementById('issueCount').textContent = orders.filter(o => o.status === 'issue').length;
         document.getElementById('blacklistCount').textContent = blacklist.length;
+        updateTotalCashSum();
     }
 
     function getClientOrderCount(name, phone) { return orders.filter(o => o.name.toLowerCase().trim() === name.toLowerCase().trim() || (phone && o.phone === phone)).length; }
@@ -869,6 +945,15 @@
             const isBlacklisted = isInBlacklist(o.name, o.phone);
             const noteHtml = o.note ? `<div class="note-text" onclick="openNoteModal(${o.id})">📝 ${escapeHtml(o.note.substring(0, 50))}${o.note.length > 50 ? '...' : ''}</div>` : `<div class="note-text" style="background:#f8f9fa; color:#999;" onclick="openNoteModal(${o.id})">✏️ Добави бележка...</div>`;
             
+            const cashHtml = o.cashAmount && o.cashAmount > 0 ? `
+                <div class="payment-edit">
+                    <span>💰 Наложен платеж: ${o.cashAmount.toFixed(2)} лв</span>
+                    <button class="btn-action btn-bank-check ${o.cashCleared ? 'cleared' : ''}" onclick="toggleCashCleared(${o.id})" style="padding: 5px 12px; font-size: 12px;">
+                        ${o.cashCleared ? '✅ Получен в брой' : '🔄 Чака проверка в банка'}
+                    </button>
+                </div>
+            ` : '';
+            
             const card = document.createElement('div');
             card.className = `order-card status-${o.status}`;
             if (isBlacklisted) card.classList.add('blacklist-warning');
@@ -876,12 +961,15 @@
             
             const countBadge = orderCount > 1 ? `<span class="order-count-badge" onclick="openHistoryModal('${escapeHtml(o.name)}', '${o.phone || ''}')">${orderCount} поръчки 📋</span>` : '';
             const blacklistBadge = isBlacklisted ? `<span class="blacklist-badge">⚠️ Черен списък</span>` : '';
+            const cashBadge = o.cashAmount && o.cashAmount > 0 ? `<span class="cash-badge ${o.cashCleared ? 'cleared' : ''}">💰 ${o.cashAmount.toFixed(2)} лв ${o.cashCleared ? '✓' : '⏳'}</span>` : '';
+            const shippingBadge = `<span class="shipping-badge">${getShippingPaidByText(o.shippingPaidBy)}</span>`;
             
             card.innerHTML = `
                 <div class="order-info">
-                    <strong>${escapeHtml(o.name)} ${countBadge} ${blacklistBadge}</strong>
+                    <strong>${escapeHtml(o.name)} ${countBadge} ${blacklistBadge} ${cashBadge} ${shippingBadge}</strong>
                     <span>📞 ${o.phone || '---'} | 📅 ${o.date}</span>
                     <span class="copy-badge" onclick="copyTrackingNumber('${o.num}')">${getCourierName(o.courier)}: ${o.num} 📋</span>
+                    ${cashHtml}
                     ${noteHtml}
                     ${o.lastCheck ? `<div class="last-check">🕐 Последна проверка: ${o.lastCheck}</div>` : ''}
                 </div>
