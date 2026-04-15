@@ -4,277 +4,290 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Автозона 33 - Система за пратки</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        :root { 
-            --primary: #2ea44f; 
-            --viber: #7360f2; 
-            --email: #007bff; 
-            --danger: #d73a49; 
+        :root {
+            --primary: #2ea44f;
+            --viber: #7360f2;
+            --email: #007bff;
+            --danger: #d73a49;
             --dark: #1a1d21;
             --success: #28a745;
             --warning: #ffc107;
             --info: #17a2b8;
             --blacklist: #dc3545;
             --bank-check: #6f42c1;
+            --subsidy: #fd7e14;
+            --bg: #f4f6f8;
+            --card-bg: #ffffff;
+            --text: #1a1d21;
+            --text-light: #666;
+            --border: #e1e4e8;
+            --hover: #f0f0f0;
+            --highlight: #fff3cd;
+            --task-bg: #e8f0fe;
         }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-        .brand { font-size: 24px; font-weight: 800; color: var(--dark); }
-        .admin-panel { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 0.8fr 0.8fr auto; gap: 12px; margin-bottom: 25px; background: #fafafa; padding: 20px; border-radius: 12px; border: 1px solid #eee; align-items: end; }
-        input, select, button, textarea { padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; font-family: inherit; }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(46, 164, 79, 0.1); }
-        .btn-add { background: var(--dark); color: white; font-weight: bold; cursor: pointer; border: none; transition: all 0.2s; }
-        .btn-add:hover { background: #000; transform: translateY(-1px); }
-        .btn-export { background: #6e7681; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .btn-export:hover { background: #5a6268; }
-        .btn-blacklist { background: var(--blacklist); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .btn-blacklist:hover { background: #b02a37; }
-        .btn-stats { background: var(--info); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .btn-stats:hover { background: #138496; }
-        .sort-buttons { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
-        .sort-btn { background: #e9ecef; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s; }
+        body.dark {
+            --primary: #2ea44f;
+            --viber: #8b74f0;
+            --email: #3399ff;
+            --danger: #e55353;
+            --dark: #f0f0f0;
+            --success: #2ea44f;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --blacklist: #e55353;
+            --bank-check: #9b7bff;
+            --subsidy: #ff9f4a;
+            --bg: #1a1d21;
+            --card-bg: #2d2f33;
+            --text: #e8eaed;
+            --text-light: #9aa0a6;
+            --border: #3a3d42;
+            --hover: #3a3d42;
+            --highlight: #5c4a1a;
+            --task-bg: #1e3a5f;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); transition: all 0.3s; }
+        .container { max-width: 1600px; margin: auto; background: var(--card-bg); padding: 24px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid var(--border); padding-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .brand { font-size: 24px; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--info)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .theme-toggle, .btn-export, .btn-blacklist, .btn-stats, .btn-add-custom { padding: 10px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; font-size: 14px; }
+        .theme-toggle { background: var(--dark); color: var(--card-bg); }
+        .btn-export { background: #6e7681; color: white; }
+        .btn-export:hover { background: #5a6268; transform: translateY(-1px); }
+        .btn-blacklist { background: var(--blacklist); color: white; }
+        .btn-blacklist:hover { background: #b02a37; transform: translateY(-1px); }
+        .btn-stats { background: var(--info); color: white; }
+        .btn-stats:hover { background: #138496; transform: translateY(-1px); }
+        .btn-add-custom { background: var(--dark); color: white; }
+        .btn-add-custom:hover { background: var(--primary); transform: translateY(-1px); }
+        
+        .admin-panel { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 25px; background: var(--hover); padding: 20px; border-radius: 16px; border: 1px solid var(--border); align-items: end; }
+        .admin-panel input, .admin-panel select { width: 100%; }
+        input, select, button, textarea { padding: 12px; border-radius: 10px; border: 1px solid var(--border); font-size: 14px; font-family: inherit; background: var(--card-bg); color: var(--text); transition: all 0.2s; }
+        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(46,164,79,0.1); }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 25px; }
+        .stat-card { background: var(--hover); padding: 15px; border-radius: 16px; text-align: center; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border); }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .stat-card .value { font-size: 26px; font-weight: 800; color: var(--primary); }
+        .stat-card .label { font-size: 12px; color: var(--text-light); margin-top: 5px; }
+        
+        .tabs { display: flex; gap: 8px; margin-bottom: 25px; border-bottom: 2px solid var(--border); padding-bottom: 10px; flex-wrap: wrap; }
+        .tab-btn { background: none; border: none; padding: 10px 24px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text); border-radius: 12px; transition: all 0.2s; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .tab-btn:hover:not(.active) { background: var(--hover); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .sort-buttons { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        .sort-btn { background: var(--border); border: none; padding: 8px 18px; border-radius: 25px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text); transition: all 0.2s; }
         .sort-btn.active { background: var(--primary); color: white; }
-        .sort-btn:hover:not(.active) { background: #dee2e6; }
-        .order-card { background: #fff; border: 1px solid #e1e4e8; padding: 18px; margin-bottom: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: flex-start; border-left: 6px solid #ccc; transition: all 0.2s; position: relative; }
-        .order-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateX(2px); }
+        .sort-btn:hover:not(.active) { background: var(--hover); }
+        
+        .order-card { background: var(--card-bg); border: 1px solid var(--border); padding: 18px; margin-bottom: 12px; border-radius: 16px; display: flex; justify-content: space-between; align-items: flex-start; border-left: 6px solid #ccc; transition: all 0.2s; }
+        .order-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateX(2px); }
+        .order-card.highlight { background: var(--highlight); border-left-color: var(--warning); }
         .status-travel { border-left-color: var(--email); }
         .status-done { border-left-color: var(--success); }
         .status-issue { border-left-color: var(--danger); }
         .order-info { flex: 1; min-width: 0; }
-        .order-info strong { display: block; font-size: 18px; margin-bottom: 4px; }
-        .order-info span { display: block; color: #666; font-size: 14px; margin-top: 4px; }
-        .copy-badge { cursor: pointer; background: #f0f7ff; color: #0056b3; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 13px; font-weight: 600; border: 1px solid #cce3ff; display: inline-block; margin-top: 6px; transition: all 0.2s; }
-        .copy-badge:hover { background: #e1f0ff; }
-        .note-text { background: #fef9e6; padding: 6px 10px; border-radius: 8px; font-size: 12px; color: #856404; margin-top: 8px; border-left: 3px solid var(--warning); cursor: pointer; }
-        .note-text:hover { background: #fff3cd; }
-        .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-        .btn-action { padding: 10px 14px; font-size: 13px; border-radius: 8px; color: white; border: none; cursor: pointer; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 4px; }
+        .order-info strong { display: block; font-size: 18px; margin-bottom: 6px; }
+        .order-info .details { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; font-size: 13px; color: var(--text-light); }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-right: 6px; margin-top: 5px; }
+        .badge-cash { background: #20c997; color: white; }
+        .badge-cash-cleared { background: var(--success); color: white; }
+        .badge-shipping-customer { background: var(--subsidy); color: white; }
+        .badge-shipping-us { background: var(--info); color: white; }
+        .badge-shipping-subsidized { background: #9b59b6; color: white; }
+        .badge-blacklist { background: var(--blacklist); color: white; }
+        .copy-badge { cursor: pointer; background: var(--hover); padding: 4px 12px; border-radius: 20px; font-family: monospace; font-size: 12px; font-weight: 600; display: inline-block; margin-top: 5px; margin-right: 6px; border: 1px solid var(--border); }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+        .btn-action { padding: 8px 14px; font-size: 12px; border-radius: 10px; color: white; border: none; cursor: pointer; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px; }
         .btn-action:hover { transform: translateY(-1px); opacity: 0.9; }
         .btn-check { background: var(--info); }
-        .btn-copy-text { background: #6f42c1; }
-        .btn-status-travel { background: #f8f9fa; color: #444; border: 1px solid #ddd; }
-        .btn-status-done { background: var(--success); color: white; }
-        .btn-status-issue { background: var(--danger); color: white; }
+        .btn-viber { background: var(--viber); }
+        .btn-email { background: var(--email); }
         .btn-note { background: var(--warning); color: #333; }
-        .btn-bank-check { background: var(--bank-check); color: white; }
-        .btn-bank-check.cleared { background: var(--success); }
+        .btn-delete { background: var(--danger); }
+        .btn-status-travel { background: #f8f9fa; color: #444; border: 1px solid #ddd; }
+        .btn-status-done { background: var(--success); }
+        .btn-status-issue { background: var(--danger); }
+        .btn-cash-toggle { background: var(--bank-check); padding: 4px 12px; font-size: 11px; }
+        .btn-cash-toggle.cleared { background: var(--success); }
         
-        .toast { position: fixed; bottom: 20px; right: 20px; background: var(--dark); color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; opacity: 0; transform: translateY(20px); transition: all 0.3s; font-weight: 500; }
-        .toast.show { opacity: 1; transform: translateY(0); }
-        .toast.success { background: var(--success); }
-        .toast.error { background: var(--danger); }
-        .toast.info { background: var(--info); }
-        .toast.warning { background: var(--warning); color: #333; }
-        
-        .stats { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
-        .stat-box { background: #f8f9fa; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #666; border: 1px solid #eee; cursor: pointer; transition: all 0.2s; }
-        .stat-box:hover { background: #e9ecef; transform: translateY(-2px); }
-        .stat-box span { color: var(--dark); font-size: 18px; margin-left: 5px; }
-        
-        .last-check { font-size: 11px; color: #999; margin-top: 4px; }
-        
-        .order-count-badge { background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-left: 8px; cursor: pointer; transition: all 0.2s; display: inline-block; }
-        .order-count-badge:hover { background: var(--info); color: white; }
-        .blacklist-badge { background: var(--danger); color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-left: 8px; display: inline-block; }
-        .cash-badge { background: #20c997; color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-left: 8px; display: inline-block; }
-        .cash-badge.cleared { background: #198754; }
-        .shipping-badge { background: #fd7e14; color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-left: 8px; display: inline-block; }
-        
-        .modal-overlay { 
-            display: none; 
-            position: fixed; 
-            top: 0; left: 0; right: 0; bottom: 0; 
-            background: rgba(0,0,0,0.7); 
-            z-index: 2000; 
-            justify-content: center; 
-            align-items: center; 
-        }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; }
         .modal-overlay.show { display: flex; }
-        .modal-content { 
-            background: white; 
-            width: 90%; 
-            max-width: 1000px; 
-            height: 85vh; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            display: flex; 
-            flex-direction: column; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-        .modal-content.small { max-width: 600px; height: auto; max-height: 80vh; }
-        .modal-header { 
-            padding: 15px 20px; 
-            background: var(--dark); 
-            color: white; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .modal-header h3 {
-            margin: 0;
-            font-size: 18px;
-        }
-        .modal-close { 
-            background: var(--danger); 
-            border: none; 
-            color: white; 
-            font-size: 14px;
-            cursor: pointer; 
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-weight: 600;
-        }
-        .modal-external {
-            background: var(--info);
-            border: none;
-            color: white;
-            font-size: 14px;
-            cursor: pointer;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .modal-info {
-            padding: 10px 20px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #eee;
-            font-size: 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .modal-body {
-            padding: 20px;
-            overflow-y: auto;
-            flex: 1;
-        }
-        .stats-filters {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        .stats-filters select, .stats-filters input {
-            flex: 1;
-            min-width: 150px;
-        }
-        .chart-container { margin: 20px 0; }
-        .chart-bar { display: flex; align-items: center; margin: 8px 0; gap: 10px; }
-        .chart-bar-label { width: 100px; font-size: 12px; font-weight: 500; }
-        .chart-bar-fill { background: var(--primary); height: 32px; border-radius: 6px; color: white; line-height: 32px; padding-left: 10px; font-size: 13px; transition: width 0.3s; }
-        .stats-summary { background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-        .stats-summary-item { text-align: center; }
-        .stats-summary-item .number { font-size: 24px; font-weight: bold; color: var(--dark); }
-        .stats-summary-item .label { font-size: 12px; color: #666; }
+        .modal-content { background: var(--card-bg); width: 90%; max-width: 1200px; height: 85vh; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; }
+        .modal-content.small { max-width: 550px; height: auto; max-height: 85vh; }
+        .modal-header { padding: 15px 20px; background: var(--dark); color: var(--card-bg); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .modal-close { background: var(--danger); border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .modal-external { background: var(--info); color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; }
+        .modal-info { padding: 12px 20px; background: var(--hover); border-bottom: 1px solid var(--border); font-size: 13px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+        .modal-iframe { flex: 1; border: none; width: 100%; background: white; }
         
-        .modal-iframe { 
-            flex: 1; 
-            border: none; 
-            width: 100%; 
-            background: white;
-        }
+        .chart-container { background: var(--card-bg); border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border); }
+        .stats-filters { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+        .stats-filters select, .stats-filters input { padding: 10px; min-width: 130px; }
         
-        .payment-edit { 
-            display: flex; 
-            gap: 15px; 
-            margin: 10px 0; 
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 20px; }
+        .calendar-day { background: var(--hover); padding: 12px; border-radius: 12px; min-height: 120px; border: 1px solid var(--border); }
+        .calendar-day.today { border: 2px solid var(--primary); background: rgba(46,164,79,0.1); }
+        .calendar-day-header { font-weight: bold; margin-bottom: 8px; font-size: 13px; text-align: center; }
+        .calendar-event { background: var(--primary); color: white; padding: 4px 6px; border-radius: 6px; font-size: 10px; margin-bottom: 4px; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .calendar-task { background: var(--task-bg); color: var(--text); padding: 4px 6px; border-radius: 6px; font-size: 10px; margin-bottom: 4px; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-left: 3px solid var(--warning); }
+        .calendar-task.done { opacity: 0.5; text-decoration: line-through; border-left-color: var(--success); }
         
-        @media (max-width: 900px) { 
-            .admin-panel { grid-template-columns: 1fr; } 
-            .order-card { flex-direction: column; align-items: flex-start; gap: 15px; }
-            .actions { width: 100%; }
-            .btn-action { flex: 1; justify-content: center; }
+        .task-item { background: var(--hover); padding: 12px; margin-bottom: 8px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .task-item.done { opacity: 0.6; text-decoration: line-through; }
+        .report-table { width: 100%; border-collapse: collapse; }
+        .report-table th, .report-table td { padding: 12px; border: 1px solid var(--border); text-align: left; }
+        .report-table th { background: var(--primary); color: white; }
+        .toast { position: fixed; bottom: 20px; right: 20px; background: var(--dark); color: white; padding: 12px 24px; border-radius: 12px; z-index: 3000; opacity: 0; transform: translateY(20px); transition: all 0.3s; font-weight: 500; }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .empty-state { text-align: center; padding: 50px; color: var(--text-light); }
+        .last-check { font-size: 11px; color: var(--text-light); margin-top: 6px; }
+        .note-text { background: rgba(255,193,7,0.1); padding: 6px 10px; border-radius: 8px; font-size: 12px; margin-top: 8px; border-left: 3px solid var(--warning); cursor: pointer; }
+        
+        @media (max-width: 900px) {
+            .container { padding: 15px; }
+            .admin-panel { grid-template-columns: 1fr; }
+            .order-card { flex-direction: column; }
+            .actions { width: 100%; justify-content: center; }
+            .calendar-grid { grid-template-columns: repeat(2, 1fr); }
             .modal-content { width: 95%; height: 90vh; }
-            .sort-buttons { justify-content: center; }
         }
-        
-        .empty-state { text-align: center; padding: 40px; color: #666; font-size: 16px; }
-        .highlight { background: #fff3cd; border-left-color: var(--warning); }
-        .blacklist-warning { border-left-color: var(--blacklist); background: #fff5f5; }
-        .blacklist-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
-        .blacklist-item:hover { background: #f8f9fa; }
-        .remove-blacklist { background: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
-        .order-history-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
-        .warning-box { background: #fff3cd; border-left: 4px solid var(--warning); padding: 15px; margin-bottom: 15px; border-radius: 8px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <div class="brand">🏎️ Автозона 33</div>
+        <div class="brand">🏎️ Автозона 33 - Логистика</div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="btn-stats" onclick="openStatsModal()">📊 Статистика</button>
+            <button class="theme-toggle" onclick="toggleTheme()">🌓 Тъмна тема</button>
+            <button class="btn-stats" onclick="openAdvancedStats()">📊 Статистика</button>
             <button class="btn-blacklist" onclick="openBlacklistModal()">⚠️ Черен списък</button>
             <button class="btn-export" onclick="exportToCSV()">📥 Excel</button>
-            <button class="btn-export" onclick="exportJSON()" style="background: var(--primary);">💾 Запази</button>
-            <button class="btn-export" onclick="document.getElementById('importFile').click()" style="background: var(--info);">📂 Зареди</button>
+            <button class="btn-export" onclick="exportJSON()" style="background: var(--primary);">💾 Бекъп</button>
+            <button class="btn-export" onclick="document.getElementById('importFile').click()" style="background: var(--info);">📂 Възстанови</button>
         </div>
     </div>
     <input type="file" id="importFile" style="display: none;" accept=".json" onchange="handleImport(event)">
     
-    <div class="stats">
-        <div class="stat-box" onclick="openStatsModal()">📦 Общо: <span id="totalCount">0</span></div>
-        <div class="stat-box" onclick="openStatsModal()">🚚 Пътуват: <span id="travelCount">0</span></div>
-        <div class="stat-box" onclick="openStatsModal()">✅ Доставени: <span id="doneCount">0</span></div>
-        <div class="stat-box" onclick="openStatsModal()">⚠️ Проблеми: <span id="issueCount">0</span></div>
-        <div class="stat-box" onclick="openStatsModal()">⛔ Черен списък: <span id="blacklistCount">0</span></div>
-        <div class="stat-box" onclick="openStatsModal()">💰 Общ НП: <span id="totalCashSum">0</span> лв</div>
+    <div class="stats-grid">
+        <div class="stat-card" onclick="openAdvancedStats()"><div class="value" id="totalCount">0</div><div class="label">📦 Общо пратки</div></div>
+        <div class="stat-card" onclick="openAdvancedStats()"><div class="value" id="travelCount">0</div><div class="label">🚚 Пътуват</div></div>
+        <div class="stat-card" onclick="openAdvancedStats()"><div class="value" id="doneCount">0</div><div class="label">✅ Доставени</div></div>
+        <div class="stat-card" onclick="openAdvancedStats()"><div class="value" id="issueCount">0</div><div class="label">⚠️ Проблемни</div></div>
+        <div class="stat-card" onclick="openAdvancedStats()"><div class="value" id="totalCashSum">0</div><div class="label">💰 Прибрани НП (лв)</div></div>
+        <div class="stat-card" onclick="openAdvancedStats()"><div class="value" id="totalOrderValue">0</div><div class="label">💎 Стойност пратки (лв)</div></div>
     </div>
     
-    <div class="sort-buttons">
-        <button class="sort-btn" data-sort="date-desc">📅 Нови най-отгоре</button>
-        <button class="sort-btn" data-sort="date-asc">📅 Стари най-отгоре</button>
-        <button class="sort-btn" data-sort="name">🔤 По име (А-Я)</button>
-        <button class="sort-btn" data-sort="status">📌 По статус</button>
-        <button class="sort-btn" data-sort="courier">🚚 По куриер</button>
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="orders">📦 Пратки</button>
+        <button class="tab-btn" data-tab="stats-advanced">📊 Статистика</button>
+        <button class="tab-btn" data-tab="tasks">✅ Задачи</button>
+        <button class="tab-btn" data-tab="calendar">📅 Календар</button>
+        <button class="tab-btn" data-tab="reports">💰 Справки НП</button>
     </div>
     
-    <div class="admin-panel">
-        <input type="text" id="custName" placeholder="Име на клиент *" required>
-        <input type="tel" id="custPhone" placeholder="Телефон (089xxxxxxx)" pattern="[0-9+]*">
-        <input type="text" id="trackNo" placeholder="Товарителница № *" oninput="detect(this.value)" required>
-        <select id="courier">
-            <option value="econt">Еконт</option>
-            <option value="speedy">Спиди</option>
-            <option value="boxnow">BoxNow</option>
-            <option value="sameday">Sameday</option>
-        </select>
-        <input type="number" id="cashAmount" placeholder="💰 Наложен платеж (лв)" step="0.01" value="0">
-        <select id="shippingPaidBy">
-            <option value="customer">🚚 Куриерът е за сметка на клиента</option>
-            <option value="us">🏢 Куриерът е за наша сметка</option>
-        </select>
-        <button class="btn-add" onclick="addOrderWithCheck()">ДОБАВИ</button>
+    <div id="tab-orders" class="tab-content active">
+        <div class="sort-buttons">
+            <button class="sort-btn" data-sort="date-desc">📅 Нови най-отгоре</button>
+            <button class="sort-btn" data-sort="date-asc">📅 Стари най-отгоре</button>
+            <button class="sort-btn" data-sort="name">🔤 По име</button>
+            <button class="sort-btn" data-sort="status">📌 По статус</button>
+            <button class="sort-btn" data-sort="courier">🚚 По куриер</button>
+        </div>
+        
+        <div class="admin-panel">
+            <input type="text" id="custName" placeholder="Име на клиент *">
+            <input type="tel" id="custPhone" placeholder="Телефон">
+            <input type="text" id="trackNo" placeholder="Товарителница № *" oninput="detectCourier(this.value)">
+            <select id="courier">
+                <option value="econt">Еконт</option>
+                <option value="speedy">Спиди</option>
+                <option value="boxnow">BoxNow</option>
+                <option value="sameday">Sameday</option>
+            </select>
+            <input type="number" id="orderValue" placeholder="💰 Стойност на пратката (лв)" step="0.01" value="0">
+            <input type="number" id="cashAmount" placeholder="💵 Наложен платеж (лв)" step="0.01" value="0">
+            <select id="shippingPaidBy">
+                <option value="customer">🚚 Клиент (3.90 EUR)</option>
+                <option value="us">🏢 Наша сметка</option>
+                <option value="subsidized">💚 Дотирана от нас</option>
+            </select>
+            <input type="number" id="shippingSubsidy" placeholder="💰 Дотирана сума (лв)" step="0.01" value="0" style="display:none;">
+            <button class="btn-add-custom" onclick="addOrderWithCheck()">➕ ДОБАВИ ПРАТКА</button>
+        </div>
+        
+        <input type="text" id="search" style="width:100%; margin-bottom:20px; padding:14px; border-radius:12px;" placeholder="🔍 Търси по име, номер или телефон... (Ctrl+F)" onkeyup="renderOrders()">
+        <div id="ordersList"></div>
     </div>
-
-    <input type="text" id="search" style="width:100%; margin-bottom:20px; padding:12px; border:2px solid #eee; border-radius:10px;" placeholder="🔍 Търси по име или номер..." onkeyup="render()">
-    <div id="list"></div>
+    
+    <div id="tab-stats-advanced" class="tab-content">
+        <div class="stats-filters">
+            <select id="statsPeriodType">
+                <option value="day">📅 По дни</option>
+                <option value="week">📆 По седмици</option>
+                <option value="month">📅 По месеци</option>
+            </select>
+            <select id="statsCourierFilter">
+                <option value="all">🚚 Всички куриери</option>
+                <option value="econt">Еконт</option>
+                <option value="speedy">Спиди</option>
+                <option value="boxnow">BoxNow</option>
+                <option value="sameday">Sameday</option>
+            </select>
+            <button onclick="refreshAdvancedStats()" class="btn-add-custom" style="background: var(--primary);">🔄 Обнови</button>
+        </div>
+        <div class="chart-container"><canvas id="ordersChart" width="400" height="200"></canvas></div>
+        <div class="chart-container"><canvas id="cashChart" width="400" height="200"></canvas></div>
+        <div id="statsTableContainer"></div>
+    </div>
+    
+    <div id="tab-tasks" class="tab-content">
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+            <input type="date" id="taskDate" value="" style="width: auto;">
+            <input type="text" id="newTask" placeholder="Нова задача..." style="flex:1;">
+            <select id="taskPriority"><option value="normal">Нормален</option><option value="high">Висок</option></select>
+            <button onclick="addTask()" class="btn-add-custom">➕ Добави</button>
+        </div>
+        <div id="tasksList"></div>
+    </div>
+    
+    <div id="tab-calendar" class="tab-content">
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
+            <button onclick="changeMonth(-1)" class="btn-add-custom">◀ Предишен</button>
+            <h3 id="currentMonthYear" style="margin:0; flex:1; text-align:center;"></h3>
+            <button onclick="changeMonth(1)" class="btn-add-custom">Следващ ▶</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+    
+    <div id="tab-reports" class="tab-content">
+        <div class="stats-filters">
+            <select id="reportYear"><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select>
+            <select id="reportMonth"><option value="1">Януари</option><option value="2">Февруари</option><option value="3">Март</option><option value="4">Април</option><option value="5">Май</option><option value="6">Юни</option><option value="7">Юли</option><option value="8">Август</option><option value="9">Септември</option><option value="10">Октомври</option><option value="11">Ноември</option><option value="12">Декември</option></select>
+            <button onclick="generateReport()" class="btn-add-custom">📊 Генерирай</button>
+            <button onclick="exportReportToCSV()" class="btn-export">📥 Експорт</button>
+        </div>
+        <div id="reportContent"></div>
+    </div>
 </div>
 
-<div id="toast" class="toast"></div>
-
-<!-- Модален прозорец за проверка на пратка -->
-<div id="checkModal" class="modal-overlay" onclick="closeModal(event)">
+<!-- Модален прозорец за проверка на пратка (iframe) -->
+<div id="checkModal" class="modal-overlay" onclick="closeModalIfClick(event, 'checkModal')">
     <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-header">
             <h3 id="modalTitle">📦 Проследяване на пратка</h3>
-            <div class="modal-buttons">
+            <div style="display: flex; gap: 10px;">
                 <a id="modalExternalLink" href="#" target="_blank" class="modal-external">🔗 Отвори в нов прозорец</a>
-                <button class="modal-close" onclick="closeModal()">✖ Затвори</button>
+                <button class="modal-close" onclick="closeModal('checkModal')">✖ Затвори</button>
             </div>
         </div>
         <div id="modalInfo" class="modal-info"></div>
@@ -282,460 +295,271 @@
     </div>
 </div>
 
-<!-- Модален прозорец за статистика -->
-<div id="statsModal" class="modal-overlay" onclick="closeStatsModal(event)">
-    <div class="modal-content small" onclick="event.stopPropagation()">
-        <div class="modal-header">
-            <h3>📊 Детайлна статистика</h3>
-            <button class="modal-close" onclick="closeStatsModal()">✖</button>
-        </div>
-        <div class="modal-body">
-            <div class="stats-filters">
-                <select id="statsPeriod">
-                    <option value="all">📅 Всички</option>
-                    <option value="7">📅 Последните 7 дни</option>
-                    <option value="30">📅 Последните 30 дни</option>
-                    <option value="90">📅 Последните 90 дни</option>
-                </select>
-                <select id="statsCourier">
-                    <option value="all">🚚 Всички куриери</option>
-                    <option value="econt">Еконт</option>
-                    <option value="speedy">Спиди</option>
-                    <option value="boxnow">BoxNow</option>
-                    <option value="sameday">Sameday</option>
-                </select>
-                <button onclick="refreshStats()" style="background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px;">🔄 Обнови</button>
-            </div>
-            <div id="statsContent"></div>
-        </div>
-    </div>
-</div>
-
-<!-- Модален прозорец за бележки -->
-<div id="noteModal" class="modal-overlay" onclick="closeNoteModal(event)">
-    <div class="modal-content small" onclick="event.stopPropagation()">
-        <div class="modal-header">
-            <h3>📝 Редактиране на бележка</h3>
-            <button class="modal-close" onclick="closeNoteModal()">✖</button>
-        </div>
-        <div class="modal-body">
-            <label>Бележка към пратката:</label>
-            <textarea id="noteInput" rows="4" class="note-input" placeholder="Вътрешни бележки..."></textarea>
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button onclick="saveNote()" style="flex:1; background: var(--primary); color: white; border: none; padding: 10px; border-radius: 8px;">💾 Запази</button>
-                <button onclick="closeNoteModal()" style="flex:1; background: var(--danger); color: white; border: none; padding: 10px; border-radius: 8px;">❌ Откажи</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Модален прозорец за черен списък -->
-<div id="blacklistModal" class="modal-overlay" onclick="closeBlacklistModal(event)">
-    <div class="modal-content small" onclick="event.stopPropagation()">
-        <div class="modal-header">
-            <h3>⚠️ Черен списък с проблемни клиенти</h3>
-            <button class="modal-close" onclick="closeBlacklistModal()">✖</button>
-        </div>
-        <div class="modal-body" id="blacklistBody"></div>
-    </div>
-</div>
-
-<!-- Модален прозорец за история -->
-<div id="historyModal" class="modal-overlay" onclick="closeHistoryModal(event)">
-    <div class="modal-content small" onclick="event.stopPropagation()">
-        <div class="modal-header">
-            <h3 id="historyTitle">📋 История на поръчките</h3>
-            <button class="modal-close" onclick="closeHistoryModal()">✖</button>
-        </div>
-        <div class="modal-body" id="historyBody"></div>
-    </div>
-</div>
-
-<!-- Модален прозорец за предупреждение -->
-<div id="warningModal" class="modal-overlay" onclick="closeWarningModal(event)">
-    <div class="modal-content small" onclick="event.stopPropagation()">
-        <div class="modal-header" style="background: var(--warning); color: #333;">
-            <h3>⚠️ ВНИМАНИЕ: Повторен клиент</h3>
-            <button class="modal-close" onclick="closeWarningModal()" style="background: #333;">✖</button>
-        </div>
-        <div class="modal-body" id="warningBody"></div>
-        <div class="confirm-buttons" style="padding: 15px; border-top: 1px solid #eee; display: flex; gap: 10px;">
-            <button class="btn-confirm" id="confirmAddBtn" style="flex:1; background: var(--success); color: white; border: none; padding: 10px; border-radius: 8px;">✅ Въпреки това добави</button>
-            <button class="btn-cancel" onclick="closeWarningModal()" style="flex:1; background: var(--danger); color: white; border: none; padding: 10px; border-radius: 8px;">❌ Откажи</button>
-        </div>
-    </div>
-</div>
+<div id="toast" class="toast"></div>
+<div id="statsModal" class="modal-overlay" onclick="closeModalIfClick(event, 'statsModal')"><div class="modal-content small" onclick="event.stopPropagation()"><div class="modal-header"><h3>📊 Детайлна статистика</h3><button class="modal-close" onclick="closeModal('statsModal')">✖</button></div><div class="modal-body" id="statsModalContent"></div></div></div>
+<div id="blacklistModal" class="modal-overlay" onclick="closeModalIfClick(event, 'blacklistModal')"><div class="modal-content small" onclick="event.stopPropagation()"><div class="modal-header"><h3>⚠️ Черен списък</h3><button class="modal-close" onclick="closeModal('blacklistModal')">✖</button></div><div class="modal-body" id="blacklistBody"></div></div></div>
+<div id="warningModal" class="modal-overlay" onclick="closeModalIfClick(event, 'warningModal')"><div class="modal-content small" onclick="event.stopPropagation()"><div class="modal-header" style="background: var(--warning); color:#333;"><h3>⚠️ ВНИМАНИЕ</h3><button class="modal-close" onclick="closeModal('warningModal')">✖</button></div><div class="modal-body" id="warningBody"></div><div style="padding:15px; display:flex; gap:10px;"><button id="confirmAddBtn" style="flex:1; background: var(--success); color:white; border:none; padding:12px; border-radius:10px; cursor:pointer;">✅ Добави въпреки това</button><button onclick="closeModal('warningModal')" style="flex:1; background: var(--danger); color:white; border:none; padding:12px; border-radius:10px; cursor:pointer;">❌ Откажи</button></div></div></div>
 
 <script>
+    // ==================== ДАННИ ====================
     let orders = JSON.parse(localStorage.getItem('autozonaOrders') || '[]');
     let blacklist = JSON.parse(localStorage.getItem('autozonaBlacklist') || '[]');
-    let currentHighlightId = null;
-    let pendingOrder = null;
-    let currentNoteOrderId = null;
+    let tasks = JSON.parse(localStorage.getItem('autozonaTasks') || '[]');
+    let deletedStack = [];
     let currentSort = 'date-desc';
-
-    // ========== Helper Functions ==========
-    function showToast(message, type = '') {
-        const toast = document.getElementById('toast');
-        toast.textContent = message;
-        toast.className = 'toast ' + type;
-        setTimeout(() => toast.classList.add('show'), 10);
-        setTimeout(() => toast.classList.remove('show'), 3000);
-    }
-
-    function detect(val) {
-        const sel = document.getElementById('courier');
-        const v = val.trim().toLowerCase();
-        if (v.length === 14 && (v.startsWith('1o') || v.startsWith('10'))) sel.value = 'sameday';
-        else if (v.length === 13 && /^\d+$/.test(v)) sel.value = 'econt';
-        else if (v.length === 11 && /^\d+$/.test(v)) sel.value = 'speedy';
-        else if (v.length === 10 && /^\d+$/.test(v)) sel.value = 'boxnow';
-        else if (v.startsWith('ec') || v.startsWith('bg')) sel.value = 'econt';
-        else if (v.startsWith('awb')) sel.value = 'speedy';
-        else if (v.startsWith('bn')) sel.value = 'boxnow';
-        else if (v.startsWith('sd')) sel.value = 'sameday';
-    }
-
-    function formatPhone(phone) {
-        if (!phone) return '';
-        let cleaned = phone.replace(/[^\d+]/g, '');
-        if (cleaned.startsWith('359') && !cleaned.startsWith('+')) cleaned = '+' + cleaned;
-        return cleaned;
-    }
-
-    function getCourierName(courier) {
-        const names = { 'econt': 'Еконт', 'speedy': 'Спиди', 'boxnow': 'BoxNow', 'sameday': 'Sameday' };
-        return names[courier] || courier;
-    }
-
-    function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
+    let pendingOrder = null;
+    let currentHighlightId = null;
+    let ordersChart = null, cashChart = null;
     
-    function getShippingPaidByText(value) {
-        return value === 'customer' ? '🚚 Клиент' : '🏢 Наша сметка';
-    }
+    const EUR_TO_BGN = 1.95583;
+    const SHIPPING_COST_EUR = 3.90;
+    const SHIPPING_COST_BGN = (SHIPPING_COST_EUR * EUR_TO_BGN).toFixed(2);
     
-    function getTrackUrl(o) {
-        if (o.courier === 'econt') return `https://www.econt.com/services/track-shipment/${o.num}`;
-        if (o.courier === 'speedy') return `https://www.speedy.bg/bg/track-shipment?shipmentNumber=${o.num}`;
-        if (o.courier === 'boxnow') return `https://www.boxnow.bg/?track=${o.num}`;
-        if (o.courier === 'sameday') return `https://sameday.bg/#awb=${o.num}`;
-        return "";
-    }
-
-    // ========== Функции за наложен платеж ==========
-    function toggleCashCleared(orderId) {
-        const order = orders.find(o => o.id === orderId);
-        if (order) {
-            order.cashCleared = !order.cashCleared;
-            save();
-            render();
-            showToast(order.cashCleared ? '✅ Наложеният платеж е отметнат като получен!' : '🔄 Наложеният платеж е върнат в чакащ режим', 'info');
-        }
-    }
+    // ==================== HELPER FUNCTIONS ====================
+    function showToast(msg, type = '') { const toast = document.getElementById('toast'); toast.textContent = msg; toast.className = 'toast ' + type; setTimeout(() => toast.classList.add('show'), 10); setTimeout(() => toast.classList.remove('show'), 3000); }
+    function escapeHtml(t) { if(!t) return ''; const div = document.createElement('div'); div.textContent = t; return div.innerHTML; }
+    function getCourierName(c) { const n = {econt:'Еконт', speedy:'Спиди', boxnow:'BoxNow', sameday:'Sameday'}; return n[c] || c; }
+    function formatPhone(p) { if(!p) return ''; let c = p.replace(/[^\d+]/g,''); if(c.startsWith('359') && !c.startsWith('+')) c='+'+c; return c; }
+    function getTrackUrl(o) { const urls = {econt:`https://www.econt.com/services/track-shipment/${o.num}`, speedy:`https://www.speedy.bg/bg/track-shipment?shipmentNumber=${o.num}`, boxnow:`https://www.boxnow.bg/?track=${o.num}`, sameday:`https://sameday.bg/#awb=${o.num}`}; return urls[o.courier] || ''; }
+    function getShippingIncome(o) { if(o.shippingPaidBy === 'customer') return parseFloat(SHIPPING_COST_BGN); if(o.shippingPaidBy === 'subsidized') return parseFloat(o.shippingSubsidy || 0); return 0; }
+    function detectCourier(v) { const sel = document.getElementById('courier'); const val = v.trim().toLowerCase(); if(val.length===14 && (val.startsWith('1o')||val.startsWith('10'))) sel.value='sameday'; else if(val.length===13 && /^\d+$/.test(val)) sel.value='econt'; else if(val.length===11 && /^\d+$/.test(val)) sel.value='speedy'; else if(val.length===10 && /^\d+$/.test(val)) sel.value='boxnow'; else if(val.startsWith('ec')||val.startsWith('bg')) sel.value='econt'; else if(val.startsWith('awb')) sel.value='speedy'; else if(val.startsWith('bn')) sel.value='boxnow'; else if(val.startsWith('sd')) sel.value='sameday'; }
     
-    function updateTotalCashSum() {
-        const total = orders.reduce((sum, o) => {
-            if (o.cashAmount && o.status === 'done' && o.cashCleared) {
-                return sum + parseFloat(o.cashAmount);
-            }
-            return sum;
-        }, 0);
-        document.getElementById('totalCashSum').textContent = total.toFixed(2);
-    }
-
-    // ========== Статистика в модален прозорец ==========
-    function openStatsModal() {
-        refreshStats();
-        document.getElementById('statsModal').classList.add('show');
-    }
-    
-    function closeStatsModal(event) {
-        if (!event || event.target.id === 'statsModal' || event.target.classList.contains('modal-close')) {
-            document.getElementById('statsModal').classList.remove('show');
-        }
-    }
-    
-    function refreshStats() {
-        const period = document.getElementById('statsPeriod').value;
-        const courierFilter = document.getElementById('statsCourier').value;
-        
-        let filteredOrders = [...orders];
-        
-        if (period !== 'all') {
-            const days = parseInt(period);
-            const cutoffDate = new Date();
-            cutoffDate.setDate(cutoffDate.getDate() - days);
-            filteredOrders = filteredOrders.filter(o => new Date(o.createdAt) >= cutoffDate);
-        }
-        
-        if (courierFilter !== 'all') {
-            filteredOrders = filteredOrders.filter(o => o.courier === courierFilter);
-        }
-        
-        const total = filteredOrders.length;
-        const travel = filteredOrders.filter(o => o.status === 'travel').length;
-        const done = filteredOrders.filter(o => o.status === 'done').length;
-        const issue = filteredOrders.filter(o => o.status === 'issue').length;
-        const donePercent = total ? Math.round((done / total) * 100) : 0;
-        const totalCash = filteredOrders.reduce((sum, o) => sum + (o.cashCleared && o.status === 'done' ? parseFloat(o.cashAmount || 0) : 0), 0);
-        
-        const courierStats = {};
-        filteredOrders.forEach(o => {
-            const name = getCourierName(o.courier);
-            if (!courierStats[name]) courierStats[name] = { total: 0, done: 0, issue: 0 };
-            courierStats[name].total++;
-            if (o.status === 'done') courierStats[name].done++;
-            if (o.status === 'issue') courierStats[name].issue++;
-        });
-        
-        const last7Days = [];
-        for (let i = 6; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            last7Days.push(date.toLocaleDateString('bg-BG'));
-        }
-        
-        const dailyCounts = {};
-        filteredOrders.forEach(o => {
-            const date = o.date.split(',')[0];
-            dailyCounts[date] = (dailyCounts[date] || 0) + 1;
-        });
-        
-        const maxCount = Math.max(...Object.values(dailyCounts), 1);
-        
-        let html = `
-            <div class="stats-summary">
-                <div class="stats-summary-item">
-                    <div class="number">${total}</div>
-                    <div class="label">📦 Общо пратки</div>
-                </div>
-                <div class="stats-summary-item">
-                    <div class="number">${travel}</div>
-                    <div class="label">🚚 Пътуват</div>
-                </div>
-                <div class="stats-summary-item">
-                    <div class="number">${done}</div>
-                    <div class="label">✅ Доставени</div>
-                </div>
-                <div class="stats-summary-item">
-                    <div class="number">${issue}</div>
-                    <div class="label">⚠️ Проблемни</div>
-                </div>
-                <div class="stats-summary-item">
-                    <div class="number">${donePercent}%</div>
-                    <div class="label">📊 Успеваемост</div>
-                </div>
-                <div class="stats-summary-item">
-                    <div class="number">${totalCash.toFixed(2)} лв</div>
-                    <div class="label">💰 Прибрани НП</div>
-                </div>
-            </div>
-        `;
-        
-        if (filteredOrders.length > 0) {
-            html += `<div style="margin-top: 20px;"><strong>📅 Поръчки по дни</strong></div>`;
-            last7Days.forEach(day => {
-                const count = dailyCounts[day] || 0;
-                const percent = (count / maxCount) * 100;
-                html += `
-                    <div class="chart-bar">
-                        <div class="chart-bar-label">${day}</div>
-                        <div class="chart-bar-fill" style="width: ${Math.max(percent, 4)}%; background: ${count > 0 ? 'var(--primary)' : '#e9ecef'}">${count > 0 ? count : ''}</div>
-                    </div>
-                `;
-            });
-        }
-        
-        if (Object.keys(courierStats).length > 0) {
-            html += `<div style="margin-top: 20px;"><strong>🚚 Разпределение по куриери</strong></div>`;
-            for (const [courier, stats] of Object.entries(courierStats)) {
-                const percent = stats.total ? Math.round((stats.done / stats.total) * 100) : 0;
-                html += `
-                    <div class="chart-bar">
-                        <div class="chart-bar-label">${courier}</div>
-                        <div class="chart-bar-fill" style="width: ${Math.max((stats.total / total) * 100, 4)}%; background: var(--info)">${stats.total} пратки (${percent}% доставени)</div>
-                    </div>
-                `;
+    function toggleTheme() { document.body.classList.toggle('dark'); localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light'); }
+    function closeModal(id) { 
+        if(id === 'checkModal') {
+            const iframe = document.getElementById('checkIframe');
+            if(iframe) iframe.src = '';
+            if(currentHighlightId) {
+                const card = document.querySelector(`.order-card[data-id="${currentHighlightId}"]`);
+                if(card) card.classList.remove('highlight');
+                currentHighlightId = null;
             }
         }
-        
-        if (filteredOrders.length === 0) {
-            html = '<div class="empty-state">📭 Няма данни за избрания период и куриер</div>';
-        }
-        
-        document.getElementById('statsContent').innerHTML = html;
+        document.getElementById(id).classList.remove('show'); 
     }
-
-    // ========== Черен списък ==========
-    function isInBlacklist(name, phone) {
-        return blacklist.some(b => {
-            const nameMatch = b.name.toLowerCase().trim() === name.toLowerCase().trim();
-            const phoneMatch = phone && b.phone === phone;
-            return nameMatch || phoneMatch;
+    function closeModalIfClick(e, id) { if(e.target.id === id) closeModal(id); }
+    
+    // ==================== СТАТИСТИКА ====================
+    function updateStats() {
+        document.getElementById('totalCount').textContent = orders.length;
+        document.getElementById('travelCount').textContent = orders.filter(o=>o.status==='travel').length;
+        document.getElementById('doneCount').textContent = orders.filter(o=>o.status==='done').length;
+        document.getElementById('issueCount').textContent = orders.filter(o=>o.status==='issue').length;
+        // САМО ПРИБРАНИТЕ НП се добавят към статистиката (cashCleared === true И status === 'done')
+        const totalCash = orders.reduce((s,o) => s + (o.cashCleared === true && o.status === 'done' ? parseFloat(o.cashAmount||0) : 0), 0);
+        document.getElementById('totalCashSum').textContent = totalCash.toFixed(2);
+        const totalOrderVal = orders.reduce((s,o) => s + parseFloat(o.orderValue||0), 0);
+        document.getElementById('totalOrderValue').textContent = totalOrderVal.toFixed(2);
+    }
+    
+    function openAdvancedStats() { refreshAdvancedStats(); document.getElementById('statsModal').classList.add('show'); document.getElementById('statsModalContent').innerHTML = '<div class="stats-filters"><select id="statsPeriodTypeModal"><option value="day">📅 По дни</option><option value="week">📆 По седмици</option><option value="month">📅 По месеци</option></select><select id="statsCourierFilterModal"><option value="all">🚚 Всички</option><option value="econt">Еконт</option><option value="speedy">Спиди</option><option value="boxnow">BoxNow</option><option value="sameday">Sameday</option></select><button onclick="refreshModalStats()" class="btn-add-custom">Обнови</button></div><div style="margin-top:20px;"><canvas id="modalOrdersChart" width="400" height="200"></canvas></div><div style="margin-top:20px;"><canvas id="modalCashChart" width="400" height="200"></canvas></div><div id="modalStatsTable"></div>'; setTimeout(() => refreshModalStats(), 100); }
+    function refreshModalStats() { const period = document.getElementById('statsPeriodTypeModal')?.value || 'day'; const courier = document.getElementById('statsCourierFilterModal')?.value || 'all'; renderAdvancedStatsCharts('modalOrdersChart', 'modalCashChart', period, courier, 'modalStatsTable'); }
+    function refreshAdvancedStats() { const period = document.getElementById('statsPeriodType').value; const courier = document.getElementById('statsCourierFilter').value; renderAdvancedStatsCharts('ordersChart', 'cashChart', period, courier, 'statsTableContainer'); }
+    
+    // ==================== ОСНОВНА ФУНКЦИЯ ЗА СТАТИСТИКА С КОРЕКТНО СОРТИРАНЕ ====================
+    function renderAdvancedStatsCharts(chartId1, chartId2, period, courierFilter, tableContainerId) {
+        let filtered = [...orders];
+        if(courierFilter !== 'all') filtered = filtered.filter(o => o.courier === courierFilter);
+        
+        let groups = {};
+        filtered.forEach(o => {
+            let date = new Date(o.createdAt);
+            let key;
+            let sortKey;
+            
+            if(period === 'day') {
+                // Формат за показване: ден.месец.година
+                key = date.toLocaleDateString('bg-BG');
+                // За сортиране: timestamp на началото на деня
+                sortKey = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+            }
+            else if(period === 'week') { 
+                const weekNum = getWeekNumber(date); 
+                key = `${date.getFullYear()}-Седм.${weekNum}`;
+                // За сортиране: намираме първия ден от седмицата (понеделник)
+                const firstDayOfWeek = new Date(date);
+                const dayOfWeek = date.getDay();
+                const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                firstDayOfWeek.setDate(date.getDate() - diff);
+                sortKey = new Date(firstDayOfWeek.getFullYear(), firstDayOfWeek.getMonth(), firstDayOfWeek.getDate()).getTime();
+            }
+            else { // month
+                key = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+                // За сортиране: първи ден от месеца
+                sortKey = new Date(date.getFullYear(), date.getMonth(), 1).getTime();
+            }
+            
+            if(!groups[key]) groups[key] = { 
+                count: 0, 
+                totalCash: 0, 
+                clearedCash: 0, 
+                orderValue: 0, 
+                couriers: {}, 
+                sortKey: sortKey 
+            };
+            groups[key].count++;
+            groups[key].totalCash += parseFloat(o.cashAmount || 0);
+            // Само прибраните НП се добавят в clearedCash
+            if(o.cashCleared === true && o.status === 'done') groups[key].clearedCash += parseFloat(o.cashAmount || 0);
+            groups[key].orderValue += parseFloat(o.orderValue || 0);
+            if(!groups[key].couriers[o.courier]) groups[key].couriers[o.courier] = 0;
+            groups[key].couriers[o.courier]++;
         });
-    }
-
-    function addToBlacklist(name, phone, reason = 'Маркиран като проблем') {
-        if (!name) return;
-        const existing = blacklist.find(b => b.name.toLowerCase().trim() === name.toLowerCase().trim());
-        if (existing) {
-            existing.count = (existing.count || 1) + 1;
-            existing.reason = reason;
-            existing.dateAdded = new Date().toLocaleString('bg-BG');
-            existing.phone = phone || existing.phone;
-        } else {
-            blacklist.push({ id: Date.now(), name, phone: phone || '', reason, dateAdded: new Date().toLocaleString('bg-BG'), count: 1 });
+        
+        // ПРАВИЛНО СОРТИРАНЕ ПО ХРОНОЛОГИЧЕН РЕД (чрез sortKey timestamp)
+        const sortedKeys = Object.keys(groups).sort((a, b) => groups[a].sortKey - groups[b].sortKey);
+        const labels = sortedKeys;
+        const countData = labels.map(l => groups[l].count);
+        const clearedCashData = labels.map(l => groups[l].clearedCash);
+        
+        // Графика 1 - Брой пратки (стълбовидна)
+        if(window[chartId1] && window[chartId1].destroy) window[chartId1].destroy();
+        const ctx1 = document.getElementById(chartId1).getContext('2d');
+        window[chartId1] = new Chart(ctx1, { 
+            type: 'bar', 
+            data: { 
+                labels: labels, 
+                datasets: [{ 
+                    label: 'Брой пратки', 
+                    data: countData, 
+                    backgroundColor: '#2ea44f', 
+                    borderRadius: 8 
+                }] 
+            }, 
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: true,
+                plugins: { 
+                    legend: { position: 'top' },
+                    tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw} пратки` } }
+                } 
+            } 
+        });
+        
+        // Графика 2 - Прибрани НП (линейна)
+        if(window[chartId2] && window[chartId2].destroy) window[chartId2].destroy();
+        const ctx2 = document.getElementById(chartId2).getContext('2d');
+        window[chartId2] = new Chart(ctx2, { 
+            type: 'line', 
+            data: { 
+                labels: labels, 
+                datasets: [{ 
+                    label: 'Прибрани НП (лв)', 
+                    data: clearedCashData, 
+                    borderColor: '#6f42c1', 
+                    backgroundColor: 'rgba(111,66,193,0.1)', 
+                    fill: true, 
+                    tension: 0.3,
+                    pointBackgroundColor: '#6f42c1',
+                    pointBorderColor: 'white',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }] 
+            }, 
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: true,
+                plugins: { 
+                    tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)} лв` } }
+                } 
+            } 
+        });
+        
+        // Таблица с детайлите
+        let tableHtml = `<table class="report-table"><thead><tr><th>Период</th><th>Брой пратки</th><th>Общ НП (лв)</th><th>Прибрани НП (лв)</th><th>Стойност пратки (лв)</th><th>Разбивка по куриери</th></tr></thead><tbody>`;
+        for(let label of labels) {
+            const g = groups[label];
+            const courierBreakdown = Object.entries(g.couriers).map(([c, cnt]) => `${getCourierName(c)}:${cnt}`).join(', ');
+            tableHtml += `<tr>
+                <td>${label}</td>
+                <td>${g.count}</td>
+                <td>${g.totalCash.toFixed(2)}</td>
+                <td>${g.clearedCash.toFixed(2)}</td>
+                <td>${g.orderValue.toFixed(2)}</td>
+                <td>${courierBreakdown || '-'}</td>
+            </tr>`;
         }
-        saveBlacklist();
-        showToast(`⚠️ ${name} е добавен в черния списък!`, 'warning');
-        render();
-    }
-
-    function removeFromBlacklist(id) {
-        blacklist = blacklist.filter(b => b.id !== id);
-        saveBlacklist();
-        showToast('Клиентът е премахнат от черния списък', 'success');
-        render();
-        if (document.getElementById('blacklistBody').innerHTML) renderBlacklistModal();
-    }
-
-    function saveBlacklist() { localStorage.setItem('autozonaBlacklist', JSON.stringify(blacklist)); updateStats(); }
-
-    // ========== Бележки ==========
-    function openNoteModal(orderId) {
-        currentNoteOrderId = orderId;
-        const order = orders.find(o => o.id === orderId);
-        document.getElementById('noteInput').value = order.note || '';
-        document.getElementById('noteModal').classList.add('show');
+        tableHtml += `</tbody></table>`;
+        document.getElementById(tableContainerId).innerHTML = tableHtml;
     }
     
-    function saveNote() {
-        if (currentNoteOrderId) {
-            const order = orders.find(o => o.id === currentNoteOrderId);
-            order.note = document.getElementById('noteInput').value;
-            save();
-            render();
-            showToast('Бележката е запазена!', 'success');
-        }
-        closeNoteModal();
+    function getWeekNumber(date) { 
+        const d = new Date(date); 
+        d.setHours(0,0,0,0); 
+        d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7); 
+        const week1 = new Date(d.getFullYear(), 0, 4); 
+        return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7); 
     }
     
-    function closeNoteModal(event) {
-        if (!event || event.target.id === 'noteModal' || event.target.classList.contains('modal-close')) {
-            document.getElementById('noteModal').classList.remove('show');
-            currentNoteOrderId = null;
-        }
-    }
-
-    // ========== Viber и комуникация ==========
-    function getViberText(o) {
-        const url = getTrackUrl(o);
-        const hour = new Date().getHours();
-        const greet = hour < 11 ? "Добро утро" : (hour < 18 ? "Добър ден" : "Добър вечер");
-        let cashText = o.cashAmount && o.cashAmount > 0 ? `\n💰 Наложен платеж: ${parseFloat(o.cashAmount).toFixed(2)} лв` : '';
-        return `✨ ${greet}, ${o.name}!\n\nВашата поръчка от Автозона 33 е изпратена чрез ${o.courier.toUpperCase()}.${cashText}\n\n📦 Товарителница №: ${o.num}\n\nЛинк за проследяване:\n${url}\n\nБлагодарим Ви за доверието! 🏎️`;
-    }
-
-    function sendViber(id) {
-        const o = orders.find(x => x.id === id);
-        const text = getViberText(o);
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    // ==================== ПРОВЕРКА НА ПРАТКА (IFRAME + ЖЪЛТО МАРКИРАНЕ) ====================
+    function checkCourierStatus(id) {
+        const order = orders.find(x => x.id === id);
+        if(!order) return;
         
-        if (isMobile) {
-            window.location.href = `viber://forward?text=${encodeURIComponent(text)}`;
-            copyToClipboard(text, false);
-            showToast('Отваряне на Viber...', 'success');
-        } else {
-            copyToClipboard(text, true);
-            showToast('Viber работи само на мобилни устройства. Текстът е копиран!', 'success');
-        }
-    }
-
-    function copyViberText(id) {
-        const o = orders.find(x => x.id === id);
-        copyToClipboard(getViberText(o), true);
-    }
-
-    function copyToClipboard(text, showNotification = true) {
-        if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(text).then(() => {
-                if (showNotification) showToast('Копирано в клипборда!', 'success');
-            });
-        } else {
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.position = "fixed";
-            textArea.style.left = "-9999px";
-            document.body.appendChild(textArea);
-            textArea.select();
-            try { document.execCommand('copy'); if (showNotification) showToast('Копирано!', 'success'); } catch(e) { if (showNotification) showToast('Грешка', 'error'); }
-            document.body.removeChild(textArea);
-        }
-    }
-
-    function copyTrackingNumber(num) { copyToClipboard(num, true); }
-
-    function sendEmail(id) {
-        const o = orders.find(x => x.id === id);
-        const url = getTrackUrl(o);
-        let cashText = o.cashAmount && o.cashAmount > 0 ? `\nНаложен платеж: ${parseFloat(o.cashAmount).toFixed(2)} лв` : '';
-        window.location.href = `mailto:?subject=Пратка от Автозона 33&body=${encodeURIComponent(`Здравейте, ${o.name}!\n\nПратката Ви пътува с ${o.courier.toUpperCase()}.\nНомер: ${o.num}${cashText}\nПроследяване: ${url}`)}`;
-    }
-
-    // ========== Управление на поръчки ==========
-    function changeStatus(id) {
-        const o = orders.find(x => x.id === id);
-        const oldStatus = o.status;
-        const next = { 'travel': 'done', 'done': 'issue', 'issue': 'travel' };
-        o.status = next[o.status];
+        const modal = document.getElementById('checkModal');
+        const iframe = document.getElementById('checkIframe');
+        const modalInfo = document.getElementById('modalInfo');
+        const modalTitle = document.getElementById('modalTitle');
+        const externalLink = document.getElementById('modalExternalLink');
+        const url = getTrackUrl(order);
         
-        if (o.status === 'issue' && oldStatus !== 'issue') {
-            addToBlacklist(o.name, o.phone, 'Маркиран като проблем');
-        }
+        if(!url) { showToast('Невалиден линк за проследяване!', 'error'); return; }
         
-        save(); render();
-        showToast('Статусът е обновен!', 'success');
+        modalInfo.innerHTML = `<span><strong>${escapeHtml(order.name)}</strong> | ${getCourierName(order.courier)}: ${order.num} | 💰 НП: ${(order.cashAmount||0).toFixed(2)} лв</span><span style="font-size:12px;">🕐 Последна проверка: ${order.lastCheck || 'няма'}</span>`;
+        modalTitle.innerHTML = `📦 ${getCourierName(order.courier)} - ${order.num}`;
+        externalLink.href = url;
+        externalLink.target = '_blank';
+        
+        iframe.src = url;
+        modal.classList.add('show');
+        
+        order.lastCheck = new Date().toLocaleString('bg-BG');
+        saveAll();
+        
+        // Маркиране в жълто на проверяваната пратка
+        highlightOrder(order.id);
+        showToast(`Зареждане на ${getCourierName(order.courier)}...`, 'info');
     }
-
+    
+    function highlightOrder(id) {
+        if(currentHighlightId) {
+            const prevCard = document.querySelector(`.order-card[data-id="${currentHighlightId}"]`);
+            if(prevCard) prevCard.classList.remove('highlight');
+        }
+        const card = document.querySelector(`.order-card[data-id="${id}"]`);
+        if(card) {
+            card.classList.add('highlight');
+            currentHighlightId = id;
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+    
+    // ==================== УПРАВЛЕНИЕ НА ПРАТКИ ====================
     function addOrderWithCheck() {
         const name = document.getElementById('custName').value.trim();
         const phone = formatPhone(document.getElementById('custPhone').value);
         const num = document.getElementById('trackNo').value.trim();
         const courier = document.getElementById('courier').value;
+        const orderValue = parseFloat(document.getElementById('orderValue').value) || 0;
         const cashAmount = parseFloat(document.getElementById('cashAmount').value) || 0;
         const shippingPaidBy = document.getElementById('shippingPaidBy').value;
-        
-        if (!name || !num) { showToast('Моля попълнете име и номер!', 'error'); return; }
-        if (orders.find(o => o.num === num && o.courier === courier)) { showToast('Тази товарителница вече съществува!', 'error'); return; }
-        
-        const clientOrders = orders.filter(o => o.name.toLowerCase().trim() === name.toLowerCase().trim() || (phone && o.phone === phone));
-        const inBlacklistFlag = isInBlacklist(name, phone);
-        
-        if (clientOrders.length > 0 || inBlacklistFlag) {
-            pendingOrder = { name, phone, num, courier, cashAmount, shippingPaidBy };
-            let warningHtml = `<div class="warning-box"><strong>⚠️ ВНИМАНИЕ!</strong><br><br>`;
-            if (clientOrders.length > 0) {
-                const lastOrder = clientOrders[clientOrders.length - 1];
-                warningHtml += `<strong>📞 Този клиент вече има ${clientOrders.length} поръчки</strong><br>• Последна: ${lastOrder.num}<br>• Статус: ${lastOrder.status === 'travel' ? '🚚 Пътува' : lastOrder.status === 'done' ? '✅ Доставена' : '⚠️ Проблем'}<br><br>`;
-            }
-            if (inBlacklistFlag) {
-                const bl = blacklist.find(b => b.name.toLowerCase().trim() === name.toLowerCase().trim());
-                warningHtml += `<strong style="color: var(--danger);">🔴 В ЧЕРЕН СПИСЪК!</strong><br>• Причина: ${bl?.reason}<br>• Брой проблеми: ${bl?.count || 1}<br>`;
-            }
-            warningHtml += `</div>`;
-            document.getElementById('warningBody').innerHTML = warningHtml;
+        const shippingSubsidy = shippingPaidBy === 'subsidized' ? parseFloat(document.getElementById('shippingSubsidy').value) || 0 : 0;
+        if(!name || !num) { showToast('Моля попълнете име и номер!', 'error'); return; }
+        if(orders.find(o => o.num === num && o.courier === courier)) { showToast('Тази товарителница вече съществува!', 'error'); return; }
+        const isBlacklisted = blacklist.some(b => b.name.toLowerCase().trim() === name.toLowerCase().trim());
+        const existingOrders = orders.filter(o => o.name.toLowerCase().trim() === name.toLowerCase().trim());
+        if(existingOrders.length > 0 || isBlacklisted) {
+            pendingOrder = { name, phone, num, courier, orderValue, cashAmount, shippingPaidBy, shippingSubsidy };
+            document.getElementById('warningBody').innerHTML = `<div style="padding:15px; background:rgba(255,193,7,0.1); border-radius:12px;"><strong>⚠️ ВНИМАНИЕ!</strong><br>${existingOrders.length > 0 ? `Този клиент вече има ${existingOrders.length} поръчки.` : ''}${isBlacklisted ? '<br>🔴 Клиентът е в ЧЕРЕН СПИСЪК!' : ''}</div>`;
             document.getElementById('warningModal').classList.add('show');
             return;
         }
-        executeAddOrder(name, phone, num, courier, cashAmount, shippingPaidBy);
+        executeAddOrder(name, phone, num, courier, orderValue, cashAmount, shippingPaidBy, shippingSubsidy);
     }
-
-    function executeAddOrder(name, phone, num, courier, cashAmount, shippingPaidBy) {
+    
+    function executeAddOrder(name, phone, num, courier, orderValue, cashAmount, shippingPaidBy, shippingSubsidy) {
         orders.unshift({ 
             id: Date.now(), 
             name, 
@@ -746,255 +570,335 @@
             date: new Date().toLocaleString('bg-BG'), 
             createdAt: Date.now(), 
             lastCheck: null, 
-            note: '',
-            cashAmount: cashAmount,
-            cashCleared: false,
-            shippingPaidBy: shippingPaidBy
+            note: '', 
+            orderValue, 
+            cashAmount, 
+            cashCleared: false, 
+            shippingPaidBy, 
+            shippingSubsidy 
         });
-        save(); render();
-        showToast('Пратката е добавена успешно!', 'success');
-        document.getElementById('custName').value = '';
-        document.getElementById('custPhone').value = '';
-        document.getElementById('trackNo').value = '';
+        saveAll(); renderOrders(); showToast('Пратката е добавена!', 'success');
+        document.getElementById('custName').value = ''; 
+        document.getElementById('custPhone').value = ''; 
+        document.getElementById('trackNo').value = ''; 
+        document.getElementById('orderValue').value = '0'; 
         document.getElementById('cashAmount').value = '0';
-        document.getElementById('custName').focus();
-        pendingOrder = null;
-        closeWarningModal();
+        pendingOrder = null; 
+        closeModal('warningModal');
     }
-
-    function confirmAddOrder() { 
-        if (pendingOrder) executeAddOrder(
-            pendingOrder.name, 
-            pendingOrder.phone, 
-            pendingOrder.num, 
-            pendingOrder.courier, 
-            pendingOrder.cashAmount, 
-            pendingOrder.shippingPaidBy
-        ); 
+    
+    function confirmAddOrder() { if(pendingOrder) executeAddOrder(pendingOrder.name, pendingOrder.phone, pendingOrder.num, pendingOrder.courier, pendingOrder.orderValue, pendingOrder.cashAmount, pendingOrder.shippingPaidBy, pendingOrder.shippingSubsidy); }
+    function deleteOrder(id) { if(confirm('Сигурни ли сте?')) { const order = orders.find(o => o.id === id); if(order) { deletedStack.push({...order}); orders = orders.filter(o => o.id !== id); saveAll(); renderOrders(); showToast('Изтрита! Използвайте Ctrl+Z за връщане', 'success'); } } }
+    function undoDelete() { if(deletedStack.length > 0) { orders.unshift(deletedStack.pop()); saveAll(); renderOrders(); showToast('Възстановена пратка!', 'success'); } else showToast('Няма за връщане', 'warning'); }
+    function changeStatus(id) { const o = orders.find(x=>x.id===id); if(o) { const next = {travel:'done', done:'issue', issue:'travel'}; o.status = next[o.status]; saveAll(); renderOrders(); showToast('Статусът е обновен!', 'success'); } }
+    
+    function toggleCashCleared(id) { 
+        const o = orders.find(x=>x.id===id); 
+        if(o) { 
+            o.cashCleared = !o.cashCleared; 
+            saveAll(); 
+            renderOrders(); 
+            showToast(o.cashCleared ? '✅ Наложеният платеж е отметнат като получен!' : '🔄 Наложеният платеж е върнат в чакащ режим', 'info'); 
+        } 
     }
-
-    function deleteOrder(id) { if(confirm("Сигурни ли сте?")) { orders = orders.filter(o => o.id !== id); save(); render(); showToast('Изтрита!', 'success'); } }
-
-    function save() { localStorage.setItem('autozonaOrders', JSON.stringify(orders)); updateStats(); }
-
-    // ========== Модален прозорец за проверка ==========
-    function checkCourierStatus(id) {
-        const o = orders.find(x => x.id === id);
-        if (!o) return;
-        openCheckModal(o);
+    
+    function saveAll() { 
+        localStorage.setItem('autozonaOrders', JSON.stringify(orders)); 
+        localStorage.setItem('autozonaBlacklist', JSON.stringify(blacklist)); 
+        localStorage.setItem('autozonaTasks', JSON.stringify(tasks)); 
+        updateStats(); 
+        autoBackup(); 
     }
-
-    function openCheckModal(order) {
-        const modal = document.getElementById('checkModal');
-        const iframe = document.getElementById('checkIframe');
-        const modalInfo = document.getElementById('modalInfo');
-        const modalTitle = document.getElementById('modalTitle');
-        const externalLink = document.getElementById('modalExternalLink');
-        const url = getTrackUrl(order);
-        
-        if (!url) {
-            showToast('Невалиден линк за проследяване!', 'error');
-            return;
+    
+    function autoBackup() { const lastBackup = localStorage.getItem('lastBackupDate'); const today = new Date().toDateString(); if(lastBackup !== today) { localStorage.setItem('autozonaOrdersBackup', JSON.stringify(orders)); localStorage.setItem('lastBackupDate', today); showToast('📀 Автоматичен бекъп', 'info'); } }
+    
+    // ==================== VIBER СЪОБЩЕНИЕ ====================
+    function getViberMessage(o) {
+        return `✨ Добър ден, ${o.name}!\n\nВашата поръчка от Автозона 33 е изпратена чрез ${getCourierName(o.courier)}.\n\n📦 Товарителница №: ${o.num}\n\nЛинк за проследяване:\n${getTrackUrl(o)}\n\nБлагодарим Ви за доверието! 🏎️`;
+    }
+    function sendViber(id) { const o = orders.find(x=>x.id===id); const text = getViberMessage(o); if(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) window.location.href=`viber://forward?text=${encodeURIComponent(text)}`; else { navigator.clipboard.writeText(text); showToast('Текстът е копиран! Можете да го поставите в Viber', 'success'); } }
+    function sendEmail(id) { const o = orders.find(x=>x.id===id); window.location.href=`mailto:?subject=Пратка от Автозона 33&body=${encodeURIComponent(getViberMessage(o))}`; }
+    function copyTracking(num) { navigator.clipboard.writeText(num); showToast('Копирано!', 'success'); }
+    function openNote(id) { const note = prompt('Бележка:', orders.find(o=>o.id===id)?.note||''); if(note !== null) { orders.find(o=>o.id===id).note = note; saveAll(); renderOrders(); showToast('Запазено!', 'success'); } }
+    
+    // ==================== ЧЕРЕН СПИСЪК ====================
+    function openBlacklistModal() { const body = document.getElementById('blacklistBody'); if(blacklist.length===0) body.innerHTML='<div class="empty-state">📭 Няма клиенти</div>'; else body.innerHTML = blacklist.map(b=>`<div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid var(--border);"><div><strong>${escapeHtml(b.name)}</strong><br><small>📞 ${b.phone||'---'} | ${b.reason||'Проблем'}</small></div><button onclick="removeFromBlacklist(${b.id})" style="background:var(--danger); color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer;">Премахни</button></div>`).join(''); document.getElementById('blacklistModal').classList.add('show'); }
+    function removeFromBlacklist(id) { blacklist = blacklist.filter(b=>b.id!==id); localStorage.setItem('autozonaBlacklist', JSON.stringify(blacklist)); openBlacklistModal(); renderOrders(); showToast('Премахнат от черен списък','success'); }
+    
+    // ==================== ЗАДАЧИ ====================
+    function addTask() { 
+        const text = document.getElementById('newTask').value.trim(); 
+        const priority = document.getElementById('taskPriority').value;
+        let taskDate = document.getElementById('taskDate').value;
+        if(!taskDate) {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            taskDate = `${year}-${month}-${day}`;
         }
-        
-        modalInfo.innerHTML = `<span><strong>${escapeHtml(order.name)}</strong> | ${getCourierName(order.courier)}: ${order.num}${order.cashAmount ? ` | 💰 ${order.cashAmount.toFixed(2)} лв` : ''}</span><span style="font-size: 12px;">🕐 Последна проверка: ${order.lastCheck || 'няма'}</span>`;
-        modalTitle.innerHTML = `📦 ${getCourierName(order.courier)} - ${order.num}`;
-        externalLink.href = url;
-        externalLink.target = '_blank';
-        
-        iframe.src = url;
-        modal.classList.add('show');
-        
-        order.lastCheck = new Date().toLocaleString('bg-BG');
-        save();
-        highlightOrder(order.id);
-        showToast(`Зареждане на ${getCourierName(order.courier)}...`, 'info');
+        if(!text) return; 
+        tasks.push({ id: Date.now(), text, priority, done: false, createdAt: Date.now(), dueDate: taskDate }); 
+        saveAll(); 
+        renderTasks(); 
+        renderCalendar();
+        document.getElementById('newTask').value = ''; 
+        showToast('Задача добавена!', 'success'); 
     }
-
-    function highlightOrder(id) {
-        if (currentHighlightId) {
-            const prevCard = document.querySelector(`.order-card[data-id="${currentHighlightId}"]`);
-            if (prevCard) prevCard.classList.remove('highlight');
-        }
-        const card = document.querySelector(`.order-card[data-id="${id}"]`);
-        if (card) {
-            card.classList.add('highlight');
-            currentHighlightId = id;
-            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+    
+    function toggleTask(id) { 
+        const t = tasks.find(x=>x.id===id); 
+        if(t) { t.done = !t.done; saveAll(); renderTasks(); renderCalendar(); } 
     }
-
-    function closeModal(event) {
-        if (!event || event.target.id === 'checkModal' || event.target.classList.contains('modal-close')) {
-            const modal = document.getElementById('checkModal');
-            const iframe = document.getElementById('checkIframe');
-            modal.classList.remove('show');
-            iframe.src = '';
+    
+    function deleteTask(id) { 
+        tasks = tasks.filter(x=>x.id!==id); 
+        saveAll(); 
+        renderTasks(); 
+        renderCalendar();
+    }
+    
+    function renderTasks() { 
+        const container = document.getElementById('tasksList'); 
+        if(!container) return; 
+        if(tasks.length===0) { container.innerHTML='<div class="empty-state">✅ Няма задачи</div>'; return; } 
+        const sortedTasks = [...tasks].sort((a,b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+        container.innerHTML = sortedTasks.map(t => `<div class="task-item ${t.done ? 'done' : ''}"><div><span style="${t.priority==='high'?'color:var(--danger);font-weight:bold':''}">${t.priority==='high'?'🔴':'🟢'}</span> <strong>${t.dueDate || 'без дата'}</strong> - ${escapeHtml(t.text)}</div><div><button onclick="toggleTask(${t.id})" style="background:var(--success); border:none; padding:6px 12px; border-radius:8px; color:white; cursor:pointer;">${t.done ? '↩️ Върни' : '✅ Свършена'}</button> <button onclick="deleteTask(${t.id})" style="background:var(--danger); border:none; padding:6px 12px; border-radius:8px; color:white; cursor:pointer;">🗑️</button></div></div>`).join(''); 
+    }
+    
+    // ==================== КАЛЕНДАР ====================
+    function renderCalendar() { 
+        const firstDay = new Date(currentYear, currentMonth, 1); 
+        const lastDay = new Date(currentYear, currentMonth + 1, 0); 
+        const startOffset = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1; 
+        const daysInMonth = lastDay.getDate(); 
+        const grid = document.getElementById('calendarGrid'); 
+        if(!grid) return; 
+        grid.innerHTML = ['Пон','Вто','Сря','Чет','Пет','Съб','Нед'].map(d=>`<div class="calendar-day-header">${d}</div>`).join(''); 
+        for(let i=0;i<startOffset;i++) grid.innerHTML += `<div class="calendar-day"></div>`; 
+        const today = new Date().toDateString(); 
+        for(let d=1;d<=daysInMonth;d++) { 
+            const date = new Date(currentYear, currentMonth, d); 
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(d).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+            const isToday = date.toDateString() === today; 
+            const dayOrders = orders.filter(o => { 
+                const od = new Date(o.date.split(',')[0]); 
+                return od.toDateString() === date.toDateString(); 
+            }); 
+            const dayTasks = tasks.filter(t => t.dueDate === dateStr);
             
-            setTimeout(() => {
-                if (currentHighlightId) {
-                    const card = document.querySelector(`.order-card[data-id="${currentHighlightId}"]`);
-                    if (card) card.classList.remove('highlight');
-                    currentHighlightId = null;
-                }
-            }, 2000);
-        }
-    }
-
-    function openBlacklistModal() { renderBlacklistModal(); document.getElementById('blacklistModal').classList.add('show'); }
-    
-    function renderBlacklistModal() { 
-        const body = document.getElementById('blacklistBody'); 
-        if(blacklist.length===0) { body.innerHTML='<div class="empty-state">📭 Няма клиенти в черния списък</div>'; return; } 
-        body.innerHTML = blacklist.map(b => `<div class="blacklist-item"><div><strong>${escapeHtml(b.name)}</strong><br><small>📞 ${b.phone||'---'} | 📅 ${b.dateAdded}</small><br><small>⚠️ ${escapeHtml(b.reason)} | 🔢 ${b.count||1} проблема</small></div><button class="remove-blacklist" onclick="removeFromBlacklist(${b.id})">Премахни</button></div>`).join(''); 
+            let tasksHtml = '';
+            dayTasks.slice(0,2).forEach(t => {
+                tasksHtml += `<div class="calendar-task ${t.done ? 'done' : ''}" onclick="toggleTask(${t.id})" title="${escapeHtml(t.text)}">${t.priority==='high'?'🔴':'🟢'} ${escapeHtml(t.text.substring(0,20))}${t.text.length>20?'...':''}</div>`;
+            });
+            if(dayTasks.length > 2) tasksHtml += `<div style="font-size:10px; color:var(--text-light);">+${dayTasks.length-2} задачи</div>`;
+            
+            grid.innerHTML += `<div class="calendar-day ${isToday ? 'today' : ''}">
+                <div class="calendar-day-header">${d}</div>
+                ${dayOrders.slice(0,2).map(o=>`<div class="calendar-event" onclick="switchToOrdersTabAndSearch('${escapeHtml(o.name)}')">📦 ${o.name}</div>`).join('')}
+                ${dayOrders.length>2 ? `<div style="font-size:10px; color:var(--text-light);">+${dayOrders.length-2} пратки</div>` : ''}
+                ${tasksHtml}
+            </div>`; 
+        } 
+        document.getElementById('currentMonthYear').innerHTML = `${firstDay.toLocaleString('bg-BG', {month:'long'})} ${currentYear}`; 
     }
     
-    function closeBlacklistModal(event) { if(!event||event.target.id==='blacklistModal'||event.target.classList.contains('modal-close')) document.getElementById('blacklistModal').classList.remove('show'); }
+    function changeMonth(delta) { currentMonth += delta; if(currentMonth<0) { currentMonth=11; currentYear--; } if(currentMonth>11) { currentMonth=0; currentYear++; } renderCalendar(); }
+    function switchToOrdersTabAndSearch(name) { document.querySelector('.tab-btn[data-tab="orders"]').click(); document.getElementById('search').value = name; renderOrders(); }
     
-    function openHistoryModal(clientName, clientPhone) { 
-        const clientOrders = orders.filter(o => o.name.toLowerCase().trim() === clientName.toLowerCase().trim() || (clientPhone && o.phone === clientPhone)); 
-        document.getElementById('historyTitle').innerHTML = `📋 История: ${escapeHtml(clientName)}`; 
-        document.getElementById('historyBody').innerHTML = clientOrders.length ? clientOrders.map(o => `<div class="order-history-item"><strong>📦 ${getCourierName(o.courier)}: ${o.num}</strong>${o.cashAmount ? `<span style="margin-left:8px;">💰 ${o.cashAmount.toFixed(2)} лв</span>` : ''}<br><small>📅 ${o.date} | ${o.status==='travel'?'🚚 Пътува':o.status==='done'?'✅ Доставена':'⚠️ Проблем'} | ${getShippingPaidByText(o.shippingPaidBy)}</small></div>`).join('') : '<div class="empty-state">📭 Няма поръчки</div>'; 
-        document.getElementById('historyModal').classList.add('show'); 
-    }
-    
-    function closeHistoryModal(event) { if(!event||event.target.id==='historyModal'||event.target.classList.contains('modal-close')) document.getElementById('historyModal').classList.remove('show'); }
-    
-    function closeWarningModal(event) { if(!event||event.target.id==='warningModal'||event.target.classList.contains('modal-close')) { document.getElementById('warningModal').classList.remove('show'); pendingOrder=null; } }
-
-    // ========== Експорт/Импорт ==========
-    function exportToCSV() {
-        let csv = "Дата,Клиент,Телефон,Куриер,Номер,Статус,Наложен платеж,Платено в брой,Куриерът е за сметка на,Последна проверка,Бележки\n";
-        orders.forEach(o => { 
-            csv += `"${o.date}","${o.name}","${o.phone}","${o.courier}","${o.num}","${o.status==='travel'?'Пътува':o.status==='done'?'Доставена':'Проблем'}","${o.cashAmount ? o.cashAmount.toFixed(2) : '0'}","${o.cashCleared ? 'ДА' : 'НЕ'}","${o.shippingPaidBy === 'customer' ? 'Клиент' : 'Наша сметка'}","${o.lastCheck||'Няма'}","${(o.note||'').replace(/"/g,'""')}"\n`; 
-        });
-        const blob = new Blob(["\ufeff"+csv], {type:'text/csv;charset=utf-8;'}); const link=document.createElement("a"); link.href=URL.createObjectURL(blob); link.download=`Avtozona33_${new Date().toISOString().split('T')[0]}.csv`; link.click(); showToast('Файлът е изтеглен!','success');
-    }
-
-    function exportJSON() {
-        const data = { app:'Avtozona33', version:'2.2', exportedAt:new Date().toISOString(), orders, blacklist };
-        const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const link=document.createElement('a'); link.href=URL.createObjectURL(blob); link.download=`Avtozona33_Backup_${new Date().toISOString().split('T')[0]}.json`; link.click(); showToast(`✅ Експортирани ${orders.length} поръчки!`,'success');
-    }
-
-    function handleImport(event) {
-        const file=event.target.files[0]; if(!file) return;
-        const reader=new FileReader();
-        reader.onload=function(e){
-            try{
-                const data=JSON.parse(e.target.result);
-                if(!data.orders||!Array.isArray(data.orders)) throw new Error('Невалиден формат!');
-                if(orders.length>0&&!confirm(`Имате ${orders.length} поръчки. Обединяване?`)) { event.target.value=''; return; }
-                const existingIds=new Set(orders.map(o=>o.id)); const newOrders=data.orders.filter(o=>!existingIds.has(o.id));
-                orders=[...orders,...newOrders];
-                if(data.blacklist&&Array.isArray(data.blacklist)){ const existingNames=new Set(blacklist.map(b=>b.name.toLowerCase().trim())); const newBl=data.blacklist.filter(b=>!existingNames.has(b.name.toLowerCase().trim())); blacklist=[...blacklist,...newBl]; saveBlacklist(); }
-                save(); render(); showToast(`✅ Добавени ${newOrders.length} поръчки!`,'success');
-            } catch(error){ showToast('❌ Грешка: '+error.message,'error'); }
-            event.target.value='';
-        };
-        reader.readAsText(file);
-    }
-
-    // ========== Сортиране ==========
-    function sortOrders(ordersToSort, sortType) {
-        const sorted = [...ordersToSort];
-        switch(sortType) {
-            case 'date-desc': return sorted.sort((a, b) => b.createdAt - a.createdAt);
-            case 'date-asc': return sorted.sort((a, b) => a.createdAt - b.createdAt);
-            case 'name': return sorted.sort((a, b) => a.name.localeCompare(b.name, 'bg'));
-            case 'status': const statusOrder = { 'travel': 1, 'done': 2, 'issue': 3 }; return sorted.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
-            case 'courier': return sorted.sort((a, b) => a.courier.localeCompare(b.courier));
-            default: return sorted;
-        }
+    // ==================== СПРАВКИ ====================
+    function generateReport() { 
+        const year = parseInt(document.getElementById('reportYear').value); 
+        const month = parseInt(document.getElementById('reportMonth').value); 
+        const filtered = orders.filter(o => { 
+            const dateParts = o.date.split(','); 
+            if(dateParts.length===0) return false; 
+            const date = new Date(dateParts[0]); 
+            return date.getFullYear() === year && date.getMonth()+1 === month && o.status === 'done'; 
+        }); 
+        const byCourier = {}; 
+        filtered.forEach(o => { 
+            const c = getCourierName(o.courier); 
+            if(!byCourier[c]) byCourier[c] = { count:0, totalCash:0, clearedCash:0, shippingIncome:0, totalOrderValue:0 }; 
+            byCourier[c].count++; 
+            byCourier[c].totalCash += parseFloat(o.cashAmount||0); 
+            if(o.cashCleared === true) byCourier[c].clearedCash += parseFloat(o.cashAmount||0); 
+            byCourier[c].shippingIncome += getShippingIncome(o); 
+            byCourier[c].totalOrderValue += parseFloat(o.orderValue||0); 
+        }); 
+        let html = `<h3>📊 Справка за ${month}/${year}</h3><table class="report-table"><thead><tr><th>Куриер</th><th>Брой</th><th>Общ НП (лв)</th><th>Прибрани НП (лв)</th><th>Приходи доставка (лв)</th><th>Стойност пратки (лв)</th></tr></thead><tbody>`; 
+        let totals = {count:0, totalCash:0, clearedCash:0, shippingIncome:0, totalOrderValue:0}; 
+        for(const [c, d] of Object.entries(byCourier)) { 
+            html += `<tr><td>${c}</td><td>${d.count}</td><td>${d.totalCash.toFixed(2)}</td><td>${d.clearedCash.toFixed(2)}</td><td>${d.shippingIncome.toFixed(2)}</td><td>${d.totalOrderValue.toFixed(2)}</td></tr>`; 
+            totals.count += d.count; totals.totalCash += d.totalCash; totals.clearedCash += d.clearedCash; totals.shippingIncome += d.shippingIncome; totals.totalOrderValue += d.totalOrderValue; 
+        } 
+        html += `<tr style="background:var(--primary); color:white;"><td><strong>ОБЩО</strong></td><td><strong>${totals.count}</strong></td><td><strong>${totals.totalCash.toFixed(2)}</strong></td><td><strong>${totals.clearedCash.toFixed(2)}</strong></td><td><strong>${totals.shippingIncome.toFixed(2)}</strong></td><td><strong>${totals.totalOrderValue.toFixed(2)}</strong></td></tr></tbody></table>`; 
+        document.getElementById('reportContent').innerHTML = html; 
     }
     
-    function setSort(type) {
-        currentSort = type;
-        document.querySelectorAll('.sort-btn').forEach(btn => {
-            if (btn.dataset.sort === type) btn.classList.add('active');
-            else btn.classList.remove('active');
-        });
-        render();
+    function exportReportToCSV() { 
+        const year = document.getElementById('reportYear').value; 
+        const month = document.getElementById('reportMonth').value; 
+        const filtered = orders.filter(o => { 
+            const dateParts = o.date.split(','); 
+            if(dateParts.length===0) return false; 
+            const date = new Date(dateParts[0]); 
+            return date.getFullYear() === parseInt(year) && date.getMonth()+1 === parseInt(month) && o.status === 'done'; 
+        }); 
+        const byCourier = {}; 
+        filtered.forEach(o => { 
+            const c = getCourierName(o.courier); 
+            if(!byCourier[c]) byCourier[c] = { count:0, totalCash:0, clearedCash:0, shippingIncome:0, totalOrderValue:0 }; 
+            byCourier[c].count++; 
+            byCourier[c].totalCash += parseFloat(o.cashAmount||0); 
+            if(o.cashCleared === true) byCourier[c].clearedCash += parseFloat(o.cashAmount||0); 
+            byCourier[c].shippingIncome += getShippingIncome(o); 
+            byCourier[c].totalOrderValue += parseFloat(o.orderValue||0); 
+        }); 
+        let csv = "Куриер,Брой,Общ НП (лв),Прибрани НП (лв),Приходи доставка (лв),Стойност пратки (лв)\n"; 
+        for(const [c,d] of Object.entries(byCourier)) csv += `"${c}",${d.count},${d.totalCash.toFixed(2)},${d.clearedCash.toFixed(2)},${d.shippingIncome.toFixed(2)},${d.totalOrderValue.toFixed(2)}\n`; 
+        const blob = new Blob(["\ufeff"+csv], {type:'text/csv'}); 
+        const link=document.createElement('a'); 
+        link.href=URL.createObjectURL(blob); 
+        link.download=`NP_Report_${month}_${year}.csv`; 
+        link.click(); 
+        showToast('Експортирано!','success'); 
     }
-
-    // ========== Рендиране ==========
-    function updateStats() {
-        document.getElementById('totalCount').textContent = orders.length;
-        document.getElementById('travelCount').textContent = orders.filter(o => o.status === 'travel').length;
-        document.getElementById('doneCount').textContent = orders.filter(o => o.status === 'done').length;
-        document.getElementById('issueCount').textContent = orders.filter(o => o.status === 'issue').length;
-        document.getElementById('blacklistCount').textContent = blacklist.length;
-        updateTotalCashSum();
+    
+    // ==================== ЕКСПОРТ/ИМПОРТ ====================
+    function exportToCSV() { 
+        let csv = "Дата,Име,Телефон,Куриер,Номер,Статус,Стойност пратка (лв),НП (лв),Платено НП,Доставка за сметка на,Дотирана сума,Бележка\n"; 
+        orders.forEach(o=>{ csv+=`"${o.date}","${o.name}","${o.phone||''}","${o.courier}","${o.num}","${o.status}","${o.orderValue||0}","${o.cashAmount||0}","${o.cashCleared?'ДА':'НЕ'}","${o.shippingPaidBy}","${o.shippingSubsidy||0}","${(o.note||'').replace(/"/g,'""')}"\n`; }); 
+        const blob=new Blob(["\ufeff"+csv],{type:'text/csv'}); 
+        const link=document.createElement('a'); 
+        link.href=URL.createObjectURL(blob); 
+        link.download=`Avtozona33_${new Date().toISOString().split('T')[0]}.csv`; 
+        link.click(); 
+        showToast('Експортирано!','success'); 
     }
-
-    function getClientOrderCount(name, phone) { return orders.filter(o => o.name.toLowerCase().trim() === name.toLowerCase().trim() || (phone && o.phone === phone)).length; }
-
-    function render() {
-        const search = document.getElementById('search').value.toLowerCase();
+    
+    function exportJSON() { 
+        const data={orders, blacklist, tasks, version:'3.0', exportedAt:new Date().toISOString()}; 
+        const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); 
+        const link=document.createElement('a'); 
+        link.href=URL.createObjectURL(blob); 
+        link.download=`Avtozona33_Backup_${new Date().toISOString().split('T')[0]}.json`; 
+        link.click(); 
+        showToast('Бекъп готов!','success'); 
+    }
+    
+    function handleImport(e) { 
+        const file=e.target.files[0]; 
+        if(!file) return; 
+        const reader=new FileReader(); 
+        reader.onload=function(ev){ 
+            try{ 
+                const data=JSON.parse(ev.target.result); 
+                if(data.orders) orders=data.orders; 
+                if(data.blacklist) blacklist=data.blacklist; 
+                if(data.tasks) tasks=data.tasks; 
+                saveAll(); 
+                renderOrders(); 
+                renderTasks(); 
+                renderCalendar();
+                showToast('Импортирано успешно!','success'); 
+            } catch(err){ 
+                showToast('Грешка при импорт','error'); 
+            } 
+            e.target.value=''; 
+        }; 
+        reader.readAsText(file); 
+    }
+    
+    // ==================== РЕНДИРАНЕ НА ПРАТКИ ====================
+    function sortOrders(arr, type) { 
+        const s = [...arr]; 
+        switch(type) { 
+            case 'date-desc': return s.sort((a,b)=>b.createdAt - a.createdAt); 
+            case 'date-asc': return s.sort((a,b)=>a.createdAt - b.createdAt); 
+            case 'name': return s.sort((a,b)=>a.name.localeCompare(b.name,'bg')); 
+            case 'status': const so = {travel:1, done:2, issue:3}; return s.sort((a,b)=>so[a.status]-so[b.status]); 
+            case 'courier': return s.sort((a,b)=>a.courier.localeCompare(b.courier)); 
+            default: return s; 
+        } 
+    }
+    
+    function setSort(type) { 
+        currentSort = type; 
+        document.querySelectorAll('.sort-btn').forEach(btn=>{if(btn.dataset.sort===type) btn.classList.add('active'); else btn.classList.remove('active');}); 
+        renderOrders(); 
+    }
+    
+    function renderOrders() {
+        const search = document.getElementById('search')?.value.toLowerCase() || '';
         let filtered = orders.filter(o => o.name.toLowerCase().includes(search) || o.num.toLowerCase().includes(search) || (o.phone && o.phone.includes(search)));
         filtered = sortOrders(filtered, currentSort);
         updateStats();
-        
-        const list = document.getElementById('list');
-        if (filtered.length === 0) { list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📦</div><div>Няма намерени пратки</div></div>`; return; }
-        
-        list.innerHTML = "";
+        const container = document.getElementById('ordersList');
+        if(!container) return;
+        if(filtered.length===0) { container.innerHTML='<div class="empty-state">📭 Няма намерени пратки</div>'; return; }
+        container.innerHTML = '';
         filtered.forEach(o => {
-            const statusConfig = { travel: { label:'🚚 Пътува', class:'btn-status-travel' }, done: { label:'✅ Доставена', class:'btn-status-done' }, issue: { label:'⚠️ Проблем', class:'btn-status-issue' } };
-            const statusInfo = statusConfig[o.status];
-            const orderCount = getClientOrderCount(o.name, o.phone);
-            const isBlacklisted = isInBlacklist(o.name, o.phone);
-            const noteHtml = o.note ? `<div class="note-text" onclick="openNoteModal(${o.id})">📝 ${escapeHtml(o.note.substring(0, 50))}${o.note.length > 50 ? '...' : ''}</div>` : `<div class="note-text" style="background:#f8f9fa; color:#999;" onclick="openNoteModal(${o.id})">✏️ Добави бележка...</div>`;
-            
-            const cashHtml = o.cashAmount && o.cashAmount > 0 ? `
-                <div class="payment-edit">
-                    <span>💰 Наложен платеж: ${o.cashAmount.toFixed(2)} лв</span>
-                    <button class="btn-action btn-bank-check ${o.cashCleared ? 'cleared' : ''}" onclick="toggleCashCleared(${o.id})" style="padding: 5px 12px; font-size: 12px;">
-                        ${o.cashCleared ? '✅ Получен в брой' : '🔄 Чака проверка в банка'}
-                    </button>
-                </div>
-            ` : '';
-            
+            const statusConfig = {travel:{label:'🚚 Пътува',class:'btn-status-travel'}, done:{label:'✅ Доставена',class:'btn-status-done'}, issue:{label:'⚠️ Проблем',class:'btn-status-issue'}};
+            const st = statusConfig[o.status];
+            let shippingText = '', shippingClass = '';
+            if(o.shippingPaidBy === 'customer') { shippingText = `💰 ${SHIPPING_COST_BGN} лв (клиент)`; shippingClass = 'badge-shipping-customer'; }
+            else if(o.shippingPaidBy === 'subsidized') { shippingText = `💚 ${o.shippingSubsidy?.toFixed(2) || 0} лв (дотирана)`; shippingClass = 'badge-shipping-subsidized'; }
+            else { shippingText = '🏢 Наша сметка'; shippingClass = 'badge-shipping-us'; }
+            const isBlacklisted = blacklist.some(b => b.name.toLowerCase().trim() === o.name.toLowerCase().trim());
             const card = document.createElement('div');
             card.className = `order-card status-${o.status}`;
-            if (isBlacklisted) card.classList.add('blacklist-warning');
             card.setAttribute('data-id', o.id);
-            
-            const countBadge = orderCount > 1 ? `<span class="order-count-badge" onclick="openHistoryModal('${escapeHtml(o.name)}', '${o.phone || ''}')">${orderCount} поръчки 📋</span>` : '';
-            const blacklistBadge = isBlacklisted ? `<span class="blacklist-badge">⚠️ Черен списък</span>` : '';
-            const cashBadge = o.cashAmount && o.cashAmount > 0 ? `<span class="cash-badge ${o.cashCleared ? 'cleared' : ''}">💰 ${o.cashAmount.toFixed(2)} лв ${o.cashCleared ? '✓' : '⏳'}</span>` : '';
-            const shippingBadge = `<span class="shipping-badge">${getShippingPaidByText(o.shippingPaidBy)}</span>`;
-            
-            card.innerHTML = `
-                <div class="order-info">
-                    <strong>${escapeHtml(o.name)} ${countBadge} ${blacklistBadge} ${cashBadge} ${shippingBadge}</strong>
-                    <span>📞 ${o.phone || '---'} | 📅 ${o.date}</span>
-                    <span class="copy-badge" onclick="copyTrackingNumber('${o.num}')">${getCourierName(o.courier)}: ${o.num} 📋</span>
-                    ${cashHtml}
-                    ${noteHtml}
-                    ${o.lastCheck ? `<div class="last-check">🕐 Последна проверка: ${o.lastCheck}</div>` : ''}
-                </div>
-                <div class="actions">
-                    <button class="btn-action ${statusInfo.class}" onclick="changeStatus(${o.id})">${statusInfo.label}</button>
-                    <button class="btn-action btn-check" onclick="checkCourierStatus(${o.id})">🔍 Провери</button>
-                    <button class="btn-action" style="background:var(--viber)" onclick="sendViber(${o.id})">💜 Viber</button>
-                    <button class="btn-action btn-copy-text" onclick="copyViberText(${o.id})">📋 Текст</button>
-                    <button class="btn-action" style="background:var(--email)" onclick="sendEmail(${o.id})">✉️ Email</button>
-                    <button class="btn-action btn-note" onclick="openNoteModal(${o.id})">📝 Бележка</button>
-                    <button class="btn-action" style="background:var(--dark)" onclick="deleteOrder(${o.id})">🗑️</button>
-                </div>`;
-            list.appendChild(card);
+            card.innerHTML = `<div class="order-info"><strong>${escapeHtml(o.name)} ${isBlacklisted ? '<span class="badge badge-blacklist">⚠️ ЧЕРЕН СПИСЪК</span>' : ''}</strong><div class="details"><span>📞 ${o.phone || '---'}</span><span>📅 ${o.date}</span></div><div><span class="copy-badge" onclick="copyTracking('${o.num}')">${getCourierName(o.courier)}: ${o.num} 📋</span><span class="badge ${shippingClass}">${shippingText}</span></div><div class="details"><span>💰 Стойност: ${(o.orderValue||0).toFixed(2)} лв</span><span>💵 НП: ${(o.cashAmount||0).toFixed(2)} лв</span><button class="btn-action btn-cash-toggle ${o.cashCleared ? 'cleared' : ''}" onclick="toggleCashCleared(${o.id})" style="padding:4px 10px;">${o.cashCleared ? '✅ Получен' : '🔄 Чака проверка'}</button></div>${o.note ? `<div class="note-text" onclick="openNote(${o.id})">📝 ${escapeHtml(o.note.substring(0,60))}</div>` : `<div class="note-text" onclick="openNote(${o.id})" style="opacity:0.6;">✏️ Добави бележка...</div>`}${o.lastCheck ? `<div class="last-check">🕐 Последна проверка: ${o.lastCheck}</div>` : ''}</div><div class="actions"><button class="btn-action ${st.class}" onclick="changeStatus(${o.id})">${st.label}</button><button class="btn-action btn-check" onclick="checkCourierStatus(${o.id})">🔍 Провери</button><button class="btn-action btn-viber" onclick="sendViber(${o.id})">💜 Viber</button><button class="btn-action btn-email" onclick="sendEmail(${o.id})">✉️ Email</button><button class="btn-action btn-delete" onclick="deleteOrder(${o.id})">🗑️ Изтрий</button></div>`;
+            container.appendChild(card);
         });
     }
-
-    // ========== Инициализация ==========
-    document.querySelectorAll('.sort-btn').forEach(btn => { btn.addEventListener('click', () => setSort(btn.dataset.sort)); });
-    document.getElementById('confirmAddBtn').onclick = confirmAddOrder;
-    document.querySelectorAll('.admin-panel input').forEach(input => { input.addEventListener('keypress', (e) => { if (e.key === 'Enter') addOrderWithCheck(); }); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeModal(); closeBlacklistModal(); closeHistoryModal(); closeWarningModal(); closeNoteModal(); closeStatsModal(); } });
     
+    // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+    document.querySelectorAll('.tab-btn').forEach(btn => { btn.addEventListener('click', () => { 
+        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); 
+        document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active')); 
+        btn.classList.add('active'); 
+        document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active'); 
+        if(btn.dataset.tab === 'calendar') renderCalendar(); 
+        if(btn.dataset.tab === 'tasks') renderTasks(); 
+        if(btn.dataset.tab === 'reports') generateReport(); 
+        if(btn.dataset.tab === 'stats-advanced') refreshAdvancedStats(); 
+    }); });
+    document.getElementById('shippingPaidBy')?.addEventListener('change', (e) => { const inp = document.getElementById('shippingSubsidy'); if(inp) inp.style.display = e.target.value === 'subsidized' ? 'inline-block' : 'none'; });
+    document.getElementById('confirmAddBtn').onclick = confirmAddOrder;
+    document.addEventListener('keydown', (e) => { 
+        if(e.ctrlKey && e.key === 'z') { e.preventDefault(); undoDelete(); } 
+        if(e.ctrlKey && e.key === 'n') { e.preventDefault(); document.getElementById('custName')?.focus(); } 
+        if(e.ctrlKey && e.key === 'f') { e.preventDefault(); document.getElementById('search')?.focus(); } 
+        if(e.key === 'Escape') { const s = document.getElementById('search'); if(s) s.value = ''; renderOrders(); } 
+    });
+    
+    // Задаване на днешната дата в полето за задача
+    const taskDateInput = document.getElementById('taskDate');
+    if(taskDateInput) {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        taskDateInput.value = `${year}-${month}-${day}`;
+    }
+    
+    if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+    document.querySelectorAll('.sort-btn').forEach(btn => btn.addEventListener('click', () => setSort(btn.dataset.sort)));
     setSort('date-desc');
-    saveBlacklist();
-    render();
+    if(tasks.length === 0) {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        tasks.push({ id: Date.now(), text: 'Провери днешните пратки', priority: 'normal', done: false, dueDate: `${year}-${month}-${day}` });
+    }
+    saveAll();
+    renderOrders();
 </script>
 </body>
 </html>
